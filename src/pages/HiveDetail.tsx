@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useHive, useDeleteHive } from '@/hooks/useHives';
@@ -33,13 +34,19 @@ import {
 } from '@/components/ui/alert-dialog';
 import SensorChart from '@/components/hive/SensorChart';
 import SensorTerminal from '@/components/hive/SensorTerminal';
+import TimeRangeSelector, { TimeRange, getDateRange } from '@/components/hive/TimeRangeSelector';
 import { getConnectionStatus, getConnectionStatusLabel, getTimeSinceReading } from '@/lib/sensorStatus';
 
 export default function HiveDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [timeRange, setTimeRange] = useState<TimeRange>('day');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  
+  const dateRange = getDateRange(timeRange, selectedDate);
+  
   const { data: hive, isLoading, isFetching, refetch } = useHive(id!);
-  const { data: readings } = useSensorReadings(id!);
+  const { data: readings } = useSensorReadings(id!, dateRange);
   const deleteHive = useDeleteHive();
 
   const handleDelete = async () => {
@@ -208,6 +215,14 @@ export default function HiveDetail() {
             colorClass="text-chart-swarm"
           />
         </div>
+
+        {/* Time Range Selector */}
+        <TimeRangeSelector
+          range={timeRange}
+          date={selectedDate}
+          onRangeChange={setTimeRange}
+          onDateChange={setSelectedDate}
+        />
 
         {/* Charts */}
         <div className="grid gap-4 sm:grid-cols-2">

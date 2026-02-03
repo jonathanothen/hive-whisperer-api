@@ -4,7 +4,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { SensorReading } from '@/types/hive';
 import { useEffect } from 'react';
 
-export function useSensorReadings(hiveId: string, limit = 100) {
+interface DateRange {
+  start: Date;
+  end: Date;
+}
+
+export function useSensorReadings(hiveId: string, dateRange?: DateRange) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -36,16 +41,23 @@ export function useSensorReadings(hiveId: string, limit = 100) {
   }, [user, hiveId, queryClient]);
 
   return useQuery({
-    queryKey: ['sensor-readings', hiveId, limit],
+    queryKey: ['sensor-readings', hiveId, dateRange?.start?.toISOString(), dateRange?.end?.toISOString()],
     queryFn: async (): Promise<SensorReading[]> => {
       if (!user || !hiveId) return [];
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('sensor_readings')
         .select('*')
         .eq('hive_id', hiveId)
-        .order('recorded_at', { ascending: true })
-        .limit(limit);
+        .order('recorded_at', { ascending: true });
+
+      if (dateRange) {
+        query = query
+          .gte('recorded_at', dateRange.start.toISOString())
+          .lte('recorded_at', dateRange.end.toISOString());
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data || [];
