@@ -210,22 +210,41 @@ export default function HiveDetail() {
         </div>
 
         {/* Charts */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <SensorChart
-            title="Miljö"
+            title="Temperatur"
             data={readings || []}
-            lines={[
-              { dataKey: 'temperature', name: 'Temperatur (°C)', color: 'hsl(var(--chart-temperature))' },
-              { dataKey: 'humidity', name: 'Luftfuktighet (%)', color: 'hsl(var(--chart-humidity))', yAxisId: 'right' },
-            ]}
+            dataKey="temperature"
+            name="Temperatur"
+            color="hsl(var(--chart-temperature))"
+            unit="°C"
+            domain={[-10, 50]}
           />
           <SensorChart
-            title="Kupa"
+            title="Luftfuktighet"
             data={readings || []}
-            lines={[
-              { dataKey: 'weight', name: 'Vikt (kg)', color: 'hsl(var(--chart-weight))' },
-              { dataKey: 'sound_rms', name: 'Ljudvolym (RMS)', color: 'hsl(var(--chart-swarm))', yAxisId: 'right' },
-            ]}
+            dataKey="humidity"
+            name="Luftfuktighet"
+            color="hsl(var(--chart-humidity))"
+            unit="%"
+            domain={[0, 100]}
+          />
+          <SensorChart
+            title="Vikt"
+            data={readings || []}
+            dataKey="weight"
+            name="Vikt"
+            color="hsl(var(--chart-weight))"
+            unit=" kg"
+            domain={[0, 100]}
+          />
+          <SensorChart
+            title="Ljudvolym"
+            data={readings || []}
+            dataKey="sound_rms"
+            name="Ljudvolym (RMS)"
+            color="hsl(var(--chart-swarm))"
+            domain={[0, 500]}
           />
         </div>
 
