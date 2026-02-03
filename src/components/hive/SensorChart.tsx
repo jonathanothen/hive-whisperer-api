@@ -43,6 +43,14 @@ export default function SensorChart({
     formattedTime: formatAggregatedTime(reading.recorded_at, timeRange),
   }));
 
+  // Debug logging
+  console.log(`[SensorChart ${title}]`, { 
+    rawDataLength: data.length, 
+    aggregatedLength: aggregatedData.length,
+    chartDataSample: chartData.slice(0, 3),
+    dataKey,
+  });
+
   const hasData = chartData.length > 0;
 
   const formatTooltipLabel = (payload: AggregatedReading) => {
