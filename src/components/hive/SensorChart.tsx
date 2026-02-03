@@ -47,12 +47,19 @@ export default function SensorChart({
 
   const formatTooltipLabel = (payload: AggregatedReading) => {
     const date = new Date(payload.recorded_at);
-    if (timeRange === 'day') {
-      const hour = date.getHours();
-      const endHour = hour + 6;
-      return `${hour.toString().padStart(2, '0')}:00 - ${endHour.toString().padStart(2, '0')}:00 (${payload.count} mätningar)`;
+    switch (timeRange) {
+      case 'day': {
+        const hour = date.getHours();
+        return `${hour.toString().padStart(2, '0')}:00 - ${(hour + 1).toString().padStart(2, '0')}:00 (${payload.count} mätningar)`;
+      }
+      case 'week': {
+        const hour = date.getHours();
+        const endHour = hour + 6;
+        return `${format(date, 'EEEE d MMMM', { locale: sv })} ${hour.toString().padStart(2, '0')}:00 - ${endHour.toString().padStart(2, '0')}:00 (${payload.count} mätningar)`;
+      }
+      case 'month':
+        return `${format(date, 'PPP', { locale: sv })} (${payload.count} mätningar)`;
     }
-    return `${format(date, 'PPP', { locale: sv })} (${payload.count} mätningar)`;
   };
 
   return (
