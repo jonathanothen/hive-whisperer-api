@@ -16,6 +16,10 @@ export interface AggregatedReading {
 function getIntervalKey(date: Date, range: TimeRange): string {
   switch (range) {
     case 'day': {
+      // Group by hour
+      return startOfHour(date).toISOString();
+    }
+    case 'week': {
       // Group by 6-hour intervals (0-5, 6-11, 12-17, 18-23)
       const hour = date.getHours();
       const intervalStart = Math.floor(hour / 6) * 6;
@@ -23,7 +27,6 @@ function getIntervalKey(date: Date, range: TimeRange): string {
       intervalDate.setHours(intervalStart);
       return intervalDate.toISOString();
     }
-    case 'week':
     case 'month': {
       // Group by day
       return startOfDay(date).toISOString();
@@ -76,11 +79,15 @@ export function formatAggregatedTime(dateStr: string, range: TimeRange): string 
   
   switch (range) {
     case 'day': {
+      // Show hour
       const hour = date.getHours();
       return `${hour.toString().padStart(2, '0')}:00`;
     }
-    case 'week':
-      return format(date, 'EEE d/M', { locale: sv });
+    case 'week': {
+      // Show day + time block
+      const hour = date.getHours();
+      return `${format(date, 'EEE', { locale: sv })} ${hour.toString().padStart(2, '0')}:00`;
+    }
     case 'month':
       return format(date, 'd MMM', { locale: sv });
   }
