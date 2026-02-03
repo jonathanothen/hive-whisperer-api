@@ -73,6 +73,7 @@ export function useHive(id: string) {
       } as HiveWithLatestReading;
     },
     enabled: !!user && !!id,
+    refetchInterval: 30000, // Poll every 30 seconds for new sensor data
   });
 }
 
