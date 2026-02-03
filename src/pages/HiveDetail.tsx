@@ -214,7 +214,7 @@ export default function HiveDetail() {
             data={readings || []}
             lines={[
               { dataKey: 'weight', name: 'Vikt (kg)', color: 'hsl(var(--chart-weight))' },
-              { dataKey: 'swarm_score', name: 'Svärm-score', color: 'hsl(var(--chart-swarm))', yAxisId: 'right' },
+              { dataKey: 'sound_rms', name: 'Ljudvolym (RMS)', color: 'hsl(var(--chart-swarm))', yAxisId: 'right' },
             ]}
           />
         </div>
