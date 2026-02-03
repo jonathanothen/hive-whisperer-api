@@ -6,12 +6,13 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import type { SensorReading } from '@/types/hive';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
+import { aggregateSensorData, formatAggregatedTime, type AggregatedReading } from '@/lib/aggregateSensorData';
+import type { TimeRange } from './TimeRangeSelector';
 
 interface SensorChartProps {
   title: string;
@@ -21,6 +22,7 @@ interface SensorChartProps {
   color: string;
   unit?: string;
   domain?: [number, number];
+  timeRange: TimeRange;
 }
 
 export default function SensorChart({ 
@@ -30,15 +32,28 @@ export default function SensorChart({
   name, 
   color, 
   unit = '',
-  domain 
+  domain,
+  timeRange,
 }: SensorChartProps) {
-  const chartData = data.map((reading) => ({
+  // Aggregate data based on time range
+  const aggregatedData = aggregateSensorData(data, timeRange);
+  
+  const chartData = aggregatedData.map((reading) => ({
     ...reading,
-    time: new Date(reading.recorded_at).getTime(),
-    formattedTime: format(new Date(reading.recorded_at), 'HH:mm', { locale: sv }),
+    formattedTime: formatAggregatedTime(reading.recorded_at, timeRange),
   }));
 
   const hasData = chartData.length > 0;
+
+  const formatTooltipLabel = (payload: AggregatedReading) => {
+    const date = new Date(payload.recorded_at);
+    if (timeRange === 'day') {
+      const hour = date.getHours();
+      const endHour = hour + 6;
+      return `${hour.toString().padStart(2, '0')}:00 - ${endHour.toString().padStart(2, '0')}:00 (${payload.count} mätningar)`;
+    }
+    return `${format(date, 'PPP', { locale: sv })} (${payload.count} mätningar)`;
+  };
 
   return (
     <Card>
@@ -73,8 +88,8 @@ export default function SensorChart({
                     borderRadius: 'var(--radius)',
                   }}
                   labelFormatter={(_, payload) => {
-                    if (payload?.[0]?.payload?.recorded_at) {
-                      return format(new Date(payload[0].payload.recorded_at), 'PPpp', { locale: sv });
+                    if (payload?.[0]?.payload) {
+                      return formatTooltipLabel(payload[0].payload as AggregatedReading);
                     }
                     return '';
                   }}
@@ -85,7 +100,7 @@ export default function SensorChart({
                   dataKey={dataKey}
                   name={name}
                   stroke={color}
-                  dot={false}
+                  dot={chartData.length < 20}
                   strokeWidth={2}
                 />
               </LineChart>
@@ -93,7 +108,7 @@ export default function SensorChart({
           </div>
         ) : (
           <div className="h-48 flex items-center justify-center text-muted-foreground">
-            Ingen sensordata ännu
+            Ingen sensordata för denna period
           </div>
         )}
       </CardContent>

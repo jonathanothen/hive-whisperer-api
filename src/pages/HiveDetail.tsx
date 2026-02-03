@@ -234,6 +234,7 @@ export default function HiveDetail() {
             color="hsl(var(--chart-temperature))"
             unit="°C"
             domain={[-10, 50]}
+            timeRange={timeRange}
           />
           <SensorChart
             title="Luftfuktighet"
@@ -243,6 +244,7 @@ export default function HiveDetail() {
             color="hsl(var(--chart-humidity))"
             unit="%"
             domain={[0, 100]}
+            timeRange={timeRange}
           />
           <SensorChart
             title="Vikt"
@@ -252,6 +254,7 @@ export default function HiveDetail() {
             color="hsl(var(--chart-weight))"
             unit=" kg"
             domain={[0, 100]}
+            timeRange={timeRange}
           />
           <SensorChart
             title="Ljudvolym"
@@ -260,6 +263,7 @@ export default function HiveDetail() {
             name="Ljudvolym (RMS)"
             color="hsl(var(--chart-swarm))"
             domain={[0, 500]}
+            timeRange={timeRange}
           />
         </div>
 
