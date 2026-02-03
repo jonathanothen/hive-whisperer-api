@@ -57,6 +57,18 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        status: {
+          ok: "hsl(var(--status-ok))",
+          warning: "hsl(var(--status-warning))",
+          alarm: "hsl(var(--status-alarm))",
+        },
+        chart: {
+          temperature: "hsl(var(--chart-temperature))",
+          humidity: "hsl(var(--chart-humidity))",
+          weight: "hsl(var(--chart-weight))",
+          sound: "hsl(var(--chart-sound))",
+          swarm: "hsl(var(--chart-swarm))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -80,10 +92,15 @@ export default {
             height: "0",
           },
         },
+        pulse: {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.5" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-slow": "pulse 2s ease-in-out infinite",
       },
     },
   },
