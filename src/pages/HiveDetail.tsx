@@ -32,6 +32,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import SensorChart from '@/components/hive/SensorChart';
+import SensorTerminal from '@/components/hive/SensorTerminal';
 import { getConnectionStatus, getConnectionStatusLabel, getTimeSinceReading } from '@/lib/sensorStatus';
 
 export default function HiveDetail() {
@@ -227,6 +228,9 @@ export default function HiveDetail() {
             ]}
           />
         </div>
+
+        {/* Debug Terminal */}
+        <SensorTerminal hiveId={id!} />
 
         {/* Info */}
         <Card>
