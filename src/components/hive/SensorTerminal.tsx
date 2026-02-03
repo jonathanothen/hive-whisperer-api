@@ -9,6 +9,7 @@ import type { SensorReading } from '@/types/hive';
 interface LogEntry {
   timestamp: Date;
   data: SensorReading;
+  isHistorical?: boolean;
 }
 
 interface SensorTerminalProps {
@@ -19,6 +20,28 @@ export default function SensorTerminal({ hiveId }: SensorTerminalProps) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
   useEffect(() => {
+    // Load recent historical data first
+    const loadHistoricalData = async () => {
+      const { data } = await supabase
+        .from('sensor_readings')
+        .select('*')
+        .eq('hive_id', hiveId)
+        .order('recorded_at', { ascending: false })
+        .limit(20);
+
+      if (data) {
+        setLogs(
+          data.map((reading) => ({
+            timestamp: new Date(reading.recorded_at),
+            data: reading as SensorReading,
+            isHistorical: true,
+          }))
+        );
+      }
+    };
+
+    loadHistoricalData();
+
     // Subscribe to realtime changes on sensor_readings
     const channel = supabase
       .channel(`sensor-terminal-${hiveId}`)
@@ -33,7 +56,7 @@ export default function SensorTerminal({ hiveId }: SensorTerminalProps) {
         (payload) => {
           const reading = payload.new as SensorReading;
           setLogs((prev) => [
-            { timestamp: new Date(), data: reading },
+            { timestamp: new Date(), data: reading, isHistorical: false },
             ...prev.slice(0, 49), // Keep last 50 entries
           ]);
         }
@@ -83,16 +106,20 @@ export default function SensorTerminal({ hiveId }: SensorTerminalProps) {
             <div className="space-y-1">
               {logs.map((log, index) => (
                 <div
-                  key={index}
-                  className="font-mono text-xs border-b border-zinc-800 pb-1"
+                  key={log.data.id || index}
+                  className={`font-mono text-xs border-b border-zinc-800 pb-1 ${
+                    !log.isHistorical ? 'bg-green-950/30' : ''
+                  }`}
                 >
                   <span className="text-zinc-500">[{formatTime(log.timestamp)}]</span>
-                  <span className="text-green-400 ml-2">DATA:</span>
+                  <span className={`ml-2 ${log.isHistorical ? 'text-zinc-400' : 'text-green-400'}`}>
+                    {log.isHistorical ? 'HIST:' : 'LIVE:'}
+                  </span>
                   <div className="ml-4 text-zinc-300">
-                    <span className="text-orange-400">temp:</span> {log.data.temperature?.toFixed(1) ?? '-'}°C{' '}
-                    <span className="text-blue-400">hum:</span> {log.data.humidity?.toFixed(0) ?? '-'}%{' '}
-                    <span className="text-purple-400">weight:</span> {log.data.weight?.toFixed(1) ?? '-'}kg{' '}
-                    <span className="text-yellow-400">sound:</span> {log.data.sound_rms?.toFixed(0) ?? '-'}
+                    <span className="text-chart-temperature">temp:</span> {log.data.temperature?.toFixed(1) ?? '-'}°C{' '}
+                    <span className="text-chart-humidity">hum:</span> {log.data.humidity?.toFixed(0) ?? '-'}%{' '}
+                    <span className="text-chart-weight">weight:</span> {log.data.weight?.toFixed(1) ?? '-'}kg{' '}
+                    <span className="text-chart-swarm">sound:</span> {log.data.sound_rms?.toFixed(0) ?? '-'}
                   </div>
                 </div>
               ))}
