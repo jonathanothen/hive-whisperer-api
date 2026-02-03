@@ -16,6 +16,8 @@ import {
   Scale,
   Volume2,
   AlertTriangle,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -29,6 +31,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import SensorChart from '@/components/hive/SensorChart';
+import { getConnectionStatus, getConnectionStatusLabel, getTimeSinceReading } from '@/lib/sensorStatus';
 
 export default function HiveDetail() {
   const { id } = useParams<{ id: string }>();
@@ -79,6 +82,19 @@ export default function HiveDetail() {
   };
 
   const reading = hive.latest_reading;
+  const connectionStatus = getConnectionStatus(reading);
+
+  const connectionColors = {
+    online: 'bg-status-ok',
+    stale: 'bg-status-warning',
+    offline: 'bg-muted',
+  };
+
+  const connectionTextColors = {
+    online: 'text-status-ok',
+    stale: 'text-status-warning',
+    offline: 'text-muted-foreground',
+  };
 
   return (
     <DashboardLayout>
@@ -100,6 +116,20 @@ export default function HiveDetail() {
                 >
                   {hive.status === 'alarm' && <AlertTriangle className="h-3 w-3 mr-1" />}
                   {statusLabels[hive.status]}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className={cn('gap-1', connectionTextColors[connectionStatus])}
+                >
+                  {connectionStatus === 'online' ? (
+                    <Wifi className="h-3 w-3" />
+                  ) : (
+                    <WifiOff className="h-3 w-3" />
+                  )}
+                  {getConnectionStatusLabel(connectionStatus)}
+                  {reading && (
+                    <span className="text-muted-foreground ml-1">• {getTimeSinceReading(reading)}</span>
+                  )}
                 </Badge>
               </div>
               {hive.apiary && (
