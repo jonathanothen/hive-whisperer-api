@@ -2,8 +2,9 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Thermometer, Droplets, Scale, Volume2, AlertTriangle } from 'lucide-react';
+import { Thermometer, Droplets, Scale, Volume2, AlertTriangle, Wifi, WifiOff } from 'lucide-react';
 import type { HiveWithLatestReading } from '@/types/hive';
+import { getConnectionStatus, getConnectionStatusLabel, getTimeSinceReading } from '@/lib/sensorStatus';
 
 interface HiveCardProps {
   hive: HiveWithLatestReading;
@@ -11,6 +12,7 @@ interface HiveCardProps {
 
 export default function HiveCard({ hive }: HiveCardProps) {
   const reading = hive.latest_reading;
+  const connectionStatus = getConnectionStatus(reading);
 
   const statusColors = {
     ok: 'bg-status-ok',
@@ -22,6 +24,12 @@ export default function HiveCard({ hive }: HiveCardProps) {
     ok: 'OK',
     warning: 'Varning',
     alarm: 'Larm',
+  };
+
+  const connectionColors = {
+    online: 'text-status-ok',
+    stale: 'text-status-warning',
+    offline: 'text-muted-foreground',
   };
 
   return (
@@ -83,9 +91,22 @@ export default function HiveCard({ hive }: HiveCardProps) {
             </p>
           )}
           {hive.device_id && (
-            <p className="text-xs text-muted-foreground mt-3 pt-3 border-t">
-              Enhet: {hive.device_id}
-            </p>
+            <div className="flex items-center justify-between mt-3 pt-3 border-t">
+              <p className="text-xs text-muted-foreground">
+                Enhet: {hive.device_id}
+              </p>
+              <div className={cn('flex items-center gap-1 text-xs', connectionColors[connectionStatus])}>
+                {connectionStatus === 'online' ? (
+                  <Wifi className="h-3 w-3" />
+                ) : (
+                  <WifiOff className="h-3 w-3" />
+                )}
+                <span>{getConnectionStatusLabel(connectionStatus)}</span>
+                {reading && (
+                  <span className="text-muted-foreground">• {getTimeSinceReading(reading)}</span>
+                )}
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
