@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   Wifi,
   WifiOff,
+  Loader2,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -36,7 +37,7 @@ import { getConnectionStatus, getConnectionStatusLabel, getTimeSinceReading } fr
 export default function HiveDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: hive, isLoading, refetch } = useHive(id!);
+  const { data: hive, isLoading, isFetching, refetch } = useHive(id!);
   const { data: readings } = useSensorReadings(id!);
   const deleteHive = useDeleteHive();
 
@@ -121,12 +122,15 @@ export default function HiveDetail() {
                   variant="outline"
                   size="sm"
                   className={cn('gap-1 h-6 px-2', connectionTextColors[connectionStatus])}
+                  disabled={isFetching}
                   onClick={(e) => {
                     e.preventDefault();
                     refetch();
                   }}
                 >
-                  {connectionStatus === 'online' ? (
+                  {isFetching ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : connectionStatus === 'online' ? (
                     <Wifi className="h-3 w-3" />
                   ) : (
                     <WifiOff className="h-3 w-3" />
