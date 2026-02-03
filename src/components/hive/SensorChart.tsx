@@ -16,15 +16,22 @@ import { sv } from 'date-fns/locale';
 interface SensorChartProps {
   title: string;
   data: SensorReading[];
-  lines: {
-    dataKey: keyof SensorReading;
-    name: string;
-    color: string;
-    yAxisId?: 'left' | 'right';
-  }[];
+  dataKey: keyof SensorReading;
+  name: string;
+  color: string;
+  unit?: string;
+  domain?: [number, number];
 }
 
-export default function SensorChart({ title, data, lines }: SensorChartProps) {
+export default function SensorChart({ 
+  title, 
+  data, 
+  dataKey, 
+  name, 
+  color, 
+  unit = '',
+  domain 
+}: SensorChartProps) {
   const chartData = data.map((reading) => ({
     ...reading,
     time: new Date(reading.recorded_at).getTime(),
@@ -32,7 +39,6 @@ export default function SensorChart({ title, data, lines }: SensorChartProps) {
   }));
 
   const hasData = chartData.length > 0;
-  const hasRightAxis = lines.some((line) => line.yAxisId === 'right');
 
   return (
     <Card>
@@ -41,34 +47,25 @@ export default function SensorChart({ title, data, lines }: SensorChartProps) {
       </CardHeader>
       <CardContent>
         {hasData ? (
-          <div className="h-64">
+          <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+              <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                 <XAxis
                   dataKey="formattedTime"
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
                   className="text-muted-foreground"
                 />
                 <YAxis
-                  yAxisId="left"
-                  tick={{ fontSize: 12 }}
+                  domain={domain || ['auto', 'auto']}
+                  tick={{ fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
                   className="text-muted-foreground"
+                  tickFormatter={(value) => `${value}${unit}`}
                 />
-                {hasRightAxis && (
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    tick={{ fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                    className="text-muted-foreground"
-                  />
-                )}
                 <Tooltip
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
@@ -81,25 +78,21 @@ export default function SensorChart({ title, data, lines }: SensorChartProps) {
                     }
                     return '';
                   }}
+                  formatter={(value: number) => [`${value?.toFixed(1)}${unit}`, name]}
                 />
-                <Legend />
-                {lines.map((line) => (
-                  <Line
-                    key={line.dataKey}
-                    type="monotone"
-                    dataKey={line.dataKey}
-                    name={line.name}
-                    stroke={line.color}
-                    yAxisId={line.yAxisId || 'left'}
-                    dot={false}
-                    strokeWidth={2}
-                  />
-                ))}
+                <Line
+                  type="monotone"
+                  dataKey={dataKey}
+                  name={name}
+                  stroke={color}
+                  dot={false}
+                  strokeWidth={2}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="h-64 flex items-center justify-center text-muted-foreground">
+          <div className="h-48 flex items-center justify-center text-muted-foreground">
             Ingen sensordata ännu
           </div>
         )}
