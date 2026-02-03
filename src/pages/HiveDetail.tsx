@@ -36,7 +36,7 @@ import { getConnectionStatus, getConnectionStatusLabel, getTimeSinceReading } fr
 export default function HiveDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: hive, isLoading } = useHive(id!);
+  const { data: hive, isLoading, refetch } = useHive(id!);
   const { data: readings } = useSensorReadings(id!);
   const deleteHive = useDeleteHive();
 
@@ -117,9 +117,14 @@ export default function HiveDetail() {
                   {hive.status === 'alarm' && <AlertTriangle className="h-3 w-3 mr-1" />}
                   {statusLabels[hive.status]}
                 </Badge>
-                <Badge
+                <Button
                   variant="outline"
-                  className={cn('gap-1', connectionTextColors[connectionStatus])}
+                  size="sm"
+                  className={cn('gap-1 h-6 px-2', connectionTextColors[connectionStatus])}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    refetch();
+                  }}
                 >
                   {connectionStatus === 'online' ? (
                     <Wifi className="h-3 w-3" />
@@ -130,7 +135,7 @@ export default function HiveDetail() {
                   {reading && (
                     <span className="text-muted-foreground ml-1">• {getTimeSinceReading(reading)}</span>
                   )}
-                </Badge>
+                </Button>
               </div>
               {hive.apiary && (
                 <p className="text-muted-foreground">{hive.apiary.name}</p>
