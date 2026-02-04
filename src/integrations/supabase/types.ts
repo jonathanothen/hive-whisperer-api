@@ -91,6 +91,7 @@ export type Database = {
           created_at: string
           device_id: string | null
           id: string
+          last_seen: string | null
           name: string
           notes: string | null
           status: string | null
@@ -102,6 +103,7 @@ export type Database = {
           created_at?: string
           device_id?: string | null
           id?: string
+          last_seen?: string | null
           name: string
           notes?: string | null
           status?: string | null
@@ -113,6 +115,7 @@ export type Database = {
           created_at?: string
           device_id?: string | null
           id?: string
+          last_seen?: string | null
           name?: string
           notes?: string | null
           status?: string | null

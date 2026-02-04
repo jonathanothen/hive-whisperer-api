@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Thermometer, Droplets, Scale, Volume2, AlertTriangle, Wifi, WifiOff } from 'lucide-react';
 import type { HiveWithLatestReading } from '@/types/hive';
-import { getConnectionStatus, getConnectionStatusLabel, getTimeSinceReading } from '@/lib/sensorStatus';
+import { getConnectionStatus, getConnectionStatusLabel, getTimeSinceContact } from '@/lib/sensorStatus';
 
 interface HiveCardProps {
   hive: HiveWithLatestReading;
@@ -12,7 +12,7 @@ interface HiveCardProps {
 
 export default function HiveCard({ hive }: HiveCardProps) {
   const reading = hive.latest_reading;
-  const connectionStatus = getConnectionStatus(reading);
+  const connectionStatus = getConnectionStatus(hive, reading);
 
   const statusColors = {
     ok: 'bg-status-ok',
@@ -102,9 +102,7 @@ export default function HiveCard({ hive }: HiveCardProps) {
                   <WifiOff className="h-3 w-3" />
                 )}
                 <span>{getConnectionStatusLabel(connectionStatus)}</span>
-                {reading && (
-                  <span className="text-muted-foreground">• {getTimeSinceReading(reading)}</span>
-                )}
+                <span className="text-muted-foreground">• {getTimeSinceContact(hive, reading)}</span>
               </div>
             </div>
           )}
