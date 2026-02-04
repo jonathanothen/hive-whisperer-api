@@ -2,15 +2,15 @@ import { SensorReading, Hive } from '@/types/hive';
 
 export type ConnectionStatus = 'online' | 'stale' | 'offline';
 
-// Thresholds in minutes
-const ONLINE_THRESHOLD = 2; // Within 2 minutes = online (heartbeat every 30s)
-const STALE_THRESHOLD = 5; // Within 5 minutes = stale (missed a few heartbeats)
+// Thresholds in minutes (based on 5-minute data interval)
+const ONLINE_THRESHOLD = 10; // Within 10 minutes = online
+const STALE_THRESHOLD = 30; // Within 30 minutes = unstable
 
 /**
  * Get connection status based on last_seen timestamp (preferred) or latest reading
  */
 export function getConnectionStatus(hive?: Pick<Hive, 'last_seen'>, latestReading?: SensorReading): ConnectionStatus {
-  // Prefer last_seen if available (updated by heartbeat)
+  // Use last_seen if available, otherwise fall back to latest reading
   const lastContactTime = hive?.last_seen 
     ? new Date(hive.last_seen).getTime()
     : latestReading?.recorded_at 
