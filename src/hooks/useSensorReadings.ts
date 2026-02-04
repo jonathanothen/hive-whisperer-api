@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { SensorReading } from '@/types/hive';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 
 interface DateRange {
   start: Date;
@@ -12,6 +12,25 @@ interface DateRange {
 export function useSensorReadings(hiveId: string, dateRange?: DateRange) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Refetch data when page becomes visible or window gains focus
+  const refetchOnVisibility = useCallback(() => {
+    if (document.visibilityState === 'visible' && user && hiveId) {
+      queryClient.invalidateQueries({ queryKey: ['sensor-readings', hiveId] });
+      queryClient.invalidateQueries({ queryKey: ['hive', hiveId] });
+      queryClient.invalidateQueries({ queryKey: ['hives'] });
+    }
+  }, [queryClient, user, hiveId]);
+
+  useEffect(() => {
+    document.addEventListener('visibilitychange', refetchOnVisibility);
+    window.addEventListener('focus', refetchOnVisibility);
+
+    return () => {
+      document.removeEventListener('visibilitychange', refetchOnVisibility);
+      window.removeEventListener('focus', refetchOnVisibility);
+    };
+  }, [refetchOnVisibility]);
 
   // Subscribe to realtime sensor readings
   useEffect(() => {

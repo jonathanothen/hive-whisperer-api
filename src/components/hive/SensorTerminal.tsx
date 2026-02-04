@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,27 +19,44 @@ interface SensorTerminalProps {
 export default function SensorTerminal({ hiveId }: SensorTerminalProps) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
-  useEffect(() => {
-    // Load recent historical data first
-    const loadHistoricalData = async () => {
-      const { data } = await supabase
-        .from('sensor_readings')
-        .select('*')
-        .eq('hive_id', hiveId)
-        .order('recorded_at', { ascending: false })
-        .limit(20);
+  // Load recent historical data
+  const loadHistoricalData = useCallback(async () => {
+    const { data } = await supabase
+      .from('sensor_readings')
+      .select('*')
+      .eq('hive_id', hiveId)
+      .order('recorded_at', { ascending: false })
+      .limit(20);
 
-      if (data) {
-        setLogs(
-          data.map((reading) => ({
-            timestamp: new Date(reading.recorded_at),
-            data: reading as SensorReading,
-            isHistorical: true,
-          }))
-        );
+    if (data) {
+      setLogs(
+        data.map((reading) => ({
+          timestamp: new Date(reading.recorded_at),
+          data: reading as SensorReading,
+          isHistorical: true,
+        }))
+      );
+    }
+  }, [hiveId]);
+
+  // Reload data when page becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadHistoricalData();
       }
     };
 
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, [loadHistoricalData]);
+
+  useEffect(() => {
     loadHistoricalData();
 
     // Subscribe to realtime changes on sensor_readings
@@ -66,7 +83,7 @@ export default function SensorTerminal({ hiveId }: SensorTerminalProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [hiveId]);
+  }, [hiveId, loadHistoricalData]);
 
   const clearLogs = () => setLogs([]);
 

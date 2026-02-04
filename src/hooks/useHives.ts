@@ -9,6 +9,7 @@ export function useHives() {
 
   return useQuery({
     queryKey: ['hives', user?.id],
+    refetchOnWindowFocus: true,
     queryFn: async (): Promise<HiveWithLatestReading[]> => {
       if (!user) return [];
 
@@ -49,6 +50,7 @@ export function useHive(id: string) {
 
   return useQuery({
     queryKey: ['hive', id],
+    refetchOnWindowFocus: true,
     queryFn: async (): Promise<HiveWithLatestReading | null> => {
       if (!user) return null;
 
