@@ -35,6 +35,25 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Validate sensor data - reject obvious sensor failures
+    // DHT sensors often return 0/0 when they fail to read
+    const isInvalidReading = 
+      (data.temperature === 0 && data.humidity === 0) ||
+      (data.temperature !== undefined && (data.temperature < -40 || data.temperature > 80)) ||
+      (data.humidity !== undefined && (data.humidity < 0 || data.humidity > 100));
+
+    if (isInvalidReading) {
+      console.log("Rejected invalid sensor reading:", data);
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid sensor reading - values outside plausible range",
+          rejected: true,
+          device_id: data.device_id 
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Find the hive by device_id
     const { data: hive, error: hiveError } = await supabase
       .from("hives")
