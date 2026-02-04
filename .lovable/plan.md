@@ -1,88 +1,60 @@
 
+# Robust anslutningsövervakning för ESP32
 
-# BeeHivez - Bikupsövervakningsplattform
+## Nuläge
 
-## Projektöversikt
-En professionell övervakningsplattform för biodlare som vill övervaka sina bikupor i realtid. Appen tar emot data från ESP32-enheter (via en central server) och visar temperatur, luftfuktighet, vikt och ljudnivå med smart svärmdetektering.
+Din ESP32 visas som **offline** eftersom den senaste mätningen kom in för över 10 timmar sedan (2026-02-03 20:57:37). Nuvarande logik:
+- **Online**: Data inom 5 minuter
+- **Instabil**: Data inom 30 minuter  
+- **Offline**: Ingen data på 30+ minuter
 
----
+## Föreslagna förbättringar
 
-## Kärnfunktioner
+### 1. Lägg till ett separat "heartbeat"-system
 
-### 1. Autentisering & Användarkonton
-- Registrering och inloggning för biodlare
-- Varje användare ser endast sina egna bikupor
-- Säker åtkomst från vilken enhet som helst
+Skapa en ny endpoint där ESP32:an kan skicka ett kort "ping" var 30:e sekund, separat från sensordata. Detta låter oss skilja på:
+- ESP32 som är **uppkopplad men inte skickar data** (heartbeat fungerar)
+- ESP32 som är **helt nere** (ingen heartbeat)
 
-### 2. Dashboard - Översikt
-- **Huvudvy** med alla bikupor i kortformat
-- Snabb statusöversikt: aktiva varningar, senaste mätvärden
-- Visuell indikator för kupor med problem (röd/orange/grön)
-- Sökfunktion och filtrering
+### 2. Spara "last_seen" på bikupan
 
-### 3. Bikupshantering
-- Lägg till, redigera och ta bort bikupor
-- Namnge kupor och gruppera efter bigård/plats
-- Koppla ESP32-enhet till bikupa med unik identifierare
-- Anteckningar och metadata per kupa
+Lägg till ett `last_seen`-fält i `hives`-tabellen som uppdateras varje gång vi får antingen sensordata eller heartbeat. Detta ger en mer exakt bild av enhetens status.
 
-### 4. Realtidsgrafer (som i din HTML-fil)
-- **Miljögrupp:** Temperatur (°C), Luftfuktighet (%)
-- **Kupagrupp:** Vikt (kg), Ljud RMS, Svärm-score
-- Dubbla Y-axlar (vänster/höger) per graf
-- Toggle för att visa/dölja dataserier
-- Tidsaxel med relativ tid (sekunder bakåt)
+### 3. Förbättra UI-feedback
 
-### 5. Historisk Data & Analys
-- Spara all sensordata i databasen
-- Visa historik per dag, vecka, månad
-- Jämför perioder för att se trender
-- Exportera data (CSV)
+- Visa tydligare information om senaste kontakt
+- Lägg till en "pinga enhet"-knapp (om du vill testa anslutningen manuellt)
+- Visa skillnad mellan "ingen data" och "ingen kontakt"
 
-### 6. Alert & Notifieringar
-- **Svärmvarning:** Automatisk detektion baserat på ljud-score
-- Två nivåer: varning (warn) och larm (alarm)
-- Alert-historik med tidsstämplar
-- **SMS-notifieringar** vid kritiska varningar (via extern SMS-tjänst som Twilio)
+## Tekniska ändringar
 
-### 7. Serverbaserad Datainsamling
-- Edge Function som tar emot data från ESP32-enheter
-- Lagrar data i Supabase-databasen
-- Realtidsuppdateringar till webbappen via Supabase Realtime
-
----
-
-## Design
-- **Professionell dashboard-stil** med mörkt tema som alternativ
-- Tydliga grafer och siffror
-- Responsiv design för mobil och desktop
-- Statusfärger: grön (OK), orange (varning), röd (larm)
-
----
-
-## Teknisk Arkitektur
-- **Frontend:** React med TypeScript, Recharts för grafer
-- **Backend:** Supabase (autentisering, databas, edge functions)
-- **Realtid:** Supabase Realtime för live-uppdateringar
-- **SMS:** Edge function som anropar SMS-tjänst (t.ex. Twilio)
-
----
-
-## Dataflöde
-```
-ESP32 → Edge Function (HTTP POST) → Supabase Database → Realtime → Webb-app
+### Databasändringar
+Lägg till kolumn i `hives`-tabellen:
+```text
+hives.last_seen (timestamp with time zone)
 ```
 
----
+### Ny backend-funktion
+Skapa `device-heartbeat` edge function som:
+- Tar emot `device_id`
+- Uppdaterar `last_seen` på motsvarande bikupa
+- Returnerar bekräftelse till ESP32
 
-## Första Implementation
-Vi börjar med:
-1. Grundläggande autentisering (login/registrering)
-2. Dashboard med bikupor
-3. Lägga till/hantera kupor
-4. Edge function för att ta emot sensordata
-5. Realtidsgrafer med live-data
-6. Alert-system med svärmvarning
+### Uppdatera befintlig ingest-funktion
+Uppdatera `ingest-sensor-data` för att också uppdatera `last_seen` när sensordata tas emot.
 
-SMS-notifieringar läggs till som en utökning efter grundfunktionaliteten är på plats.
+### Frontendändringar
+- Uppdatera `sensorStatus.ts` för att använda `last_seen` istället för senaste mätning
+- Uppdatera typdefinitioner
+- Förbättra statusvisningen med mer detaljerad information
 
+## ESP32-ändringar (din del)
+
+Du behöver lägga till ett heartbeat-anrop i din ESP32-kod som skickar en HTTP POST till heartbeat-endpointen var 30:e sekund:
+
+```text
+POST /functions/v1/device-heartbeat
+{"device_id": "ESP32_KUPA1"}
+```
+
+Detta kan köras på en separat timer från sensordata-sändningen.
