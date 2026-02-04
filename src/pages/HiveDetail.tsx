@@ -35,7 +35,7 @@ import {
 import SensorChart from '@/components/hive/SensorChart';
 import SensorTerminal from '@/components/hive/SensorTerminal';
 import TimeRangeSelector, { TimeRange, getDateRange } from '@/components/hive/TimeRangeSelector';
-import { getConnectionStatus, getConnectionStatusLabel, getTimeSinceReading } from '@/lib/sensorStatus';
+import { getConnectionStatus, getConnectionStatusLabel, getTimeSinceContact, getTimeSinceReading } from '@/lib/sensorStatus';
 
 export default function HiveDetail() {
   const { id } = useParams<{ id: string }>();
@@ -91,7 +91,7 @@ export default function HiveDetail() {
   };
 
   const reading = hive.latest_reading;
-  const connectionStatus = getConnectionStatus(reading);
+  const connectionStatus = getConnectionStatus(hive, reading);
 
   const connectionColors = {
     online: 'bg-status-ok',
@@ -144,9 +144,7 @@ export default function HiveDetail() {
                     <WifiOff className="h-3 w-3" />
                   )}
                   {getConnectionStatusLabel(connectionStatus)}
-                  {reading && (
-                    <span className="text-muted-foreground ml-1">• {getTimeSinceReading(reading)}</span>
-                  )}
+                  <span className="text-muted-foreground ml-1">• {getTimeSinceContact(hive, reading)}</span>
                 </Button>
               </div>
               {hive.apiary && (

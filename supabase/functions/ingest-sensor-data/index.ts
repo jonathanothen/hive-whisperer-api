@@ -49,15 +49,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Insert sensor reading
-    const { error: insertError } = await supabase.from("sensor_readings").insert({
-      hive_id: hive.id,
-      temperature: data.temperature,
-      humidity: data.humidity,
-      weight: data.weight,
-      sound_rms: data.sound_rms,
-      swarm_score: data.swarm_score,
-    });
+    // Insert sensor reading and update last_seen
+    const [{ error: insertError }, { error: updateError }] = await Promise.all([
+      supabase.from("sensor_readings").insert({
+        hive_id: hive.id,
+        temperature: data.temperature,
+        humidity: data.humidity,
+        weight: data.weight,
+        sound_rms: data.sound_rms,
+        swarm_score: data.swarm_score,
+      }),
+      supabase.from("hives").update({ last_seen: new Date().toISOString() }).eq("id", hive.id)
+    ]);
+
+    if (updateError) {
+      console.error("Error updating last_seen:", updateError);
+    }
 
     if (insertError) {
       console.error("Error inserting sensor reading:", insertError);

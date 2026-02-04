@@ -26,6 +26,7 @@ export interface Hive {
   device_id: string | null;
   notes: string | null;
   status: 'ok' | 'warning' | 'alarm';
+  last_seen: string | null;
   created_at: string;
   updated_at: string;
   apiary?: Apiary;
