@@ -1,60 +1,55 @@
 
-# Robust anslutningsövervakning för ESP32
 
-## Nuläge
+# Förbättrad datauppdatering när appen återaktiveras
 
-Din ESP32 visas som **offline** eftersom den senaste mätningen kom in för över 10 timmar sedan (2026-02-03 20:57:37). Nuvarande logik:
-- **Online**: Data inom 5 minuter
-- **Instabil**: Data inom 30 minuter  
-- **Offline**: Ingen data på 30+ minuter
+## Problem
 
-## Föreslagna förbättringar
+Data som kommer in medan appen är i bakgrunden/idle visas inte förrän man laddar om sidan. Realtime-prenumerationer tappar ofta anslutningen när webbläsarfliken är inaktiv.
 
-### 1. Lägg till ett separat "heartbeat"-system
+## Lösning
 
-Skapa en ny endpoint där ESP32:an kan skicka ett kort "ping" var 30:e sekund, separat från sensordata. Detta låter oss skilja på:
-- ESP32 som är **uppkopplad men inte skickar data** (heartbeat fungerar)
-- ESP32 som är **helt nere** (ingen heartbeat)
-
-### 2. Spara "last_seen" på bikupan
-
-Lägg till ett `last_seen`-fält i `hives`-tabellen som uppdateras varje gång vi får antingen sensordata eller heartbeat. Detta ger en mer exakt bild av enhetens status.
-
-### 3. Förbättra UI-feedback
-
-- Visa tydligare information om senaste kontakt
-- Lägg till en "pinga enhet"-knapp (om du vill testa anslutningen manuellt)
-- Visa skillnad mellan "ingen data" och "ingen kontakt"
+Implementera "visibility change" och "focus" event-lyssnare som automatiskt hämtar ny data när användaren återvänder till appen.
 
 ## Tekniska ändringar
 
-### Databasändringar
-Lägg till kolumn i `hives`-tabellen:
-```text
-hives.last_seen (timestamp with time zone)
-```
+### 1. Uppdatera useSensorReadings hook
 
-### Ny backend-funktion
-Skapa `device-heartbeat` edge function som:
-- Tar emot `device_id`
-- Uppdaterar `last_seen` på motsvarande bikupa
-- Returnerar bekräftelse till ESP32
-
-### Uppdatera befintlig ingest-funktion
-Uppdatera `ingest-sensor-data` för att också uppdatera `last_seen` när sensordata tas emot.
-
-### Frontendändringar
-- Uppdatera `sensorStatus.ts` för att använda `last_seen` istället för senaste mätning
-- Uppdatera typdefinitioner
-- Förbättra statusvisningen med mer detaljerad information
-
-## ESP32-ändringar (din del)
-
-Du behöver lägga till ett heartbeat-anrop i din ESP32-kod som skickar en HTTP POST till heartbeat-endpointen var 30:e sekund:
+Lägg till en effekt som lyssnar på `visibilitychange` och `focus` events:
+- När sidan blir synlig igen, invalidera query cache för att trigga ny datahämtning
+- Behåll realtime som komplement för när appen är aktiv
 
 ```text
-POST /functions/v1/device-heartbeat
-{"device_id": "ESP32_KUPA1"}
+src/hooks/useSensorReadings.ts:
+- Lägg till visibilitychange event listener
+- Invalidera queries när document.visibilityState === 'visible'
+- Lägg till window focus event listener som backup
 ```
 
-Detta kan köras på en separat timer från sensordata-sändningen.
+### 2. Uppdatera SensorTerminal
+
+Samma princip - ladda om historisk data när sidan blir synlig:
+
+```text
+src/components/hive/SensorTerminal.tsx:
+- Lägg till visibilitychange event listener
+- Anropa loadHistoricalData() när sidan återaktiveras
+- Detta fyller i luckan mellan senaste HIST och nu
+```
+
+### 3. Uppdatera useHive hook
+
+Lägg till samma visibility-logik för att uppdatera hive-status och senaste mätvärden:
+
+```text
+src/hooks/useHives.ts:
+- Lägg till refetchOnWindowFocus: true i useQuery options
+- Detta är inbyggt i TanStack Query men kan behöva aktiveras explicit
+```
+
+## Resultat
+
+- Terminalen och graferna uppdateras automatiskt när du växlar tillbaka till fliken
+- Ingen manuell refresh behövs
+- Realtime fungerar fortfarande för live-uppdateringar när appen är aktiv
+- Inga missade datapunkter längre
+
