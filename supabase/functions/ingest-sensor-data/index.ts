@@ -54,6 +54,18 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Upsert device — auto-register on first contact
+    const { error: deviceError } = await supabase
+      .from("devices")
+      .upsert(
+        { device_id: data.device_id, last_seen: new Date().toISOString() },
+        { onConflict: "device_id" }
+      );
+
+    if (deviceError) {
+      console.error("Error upserting device:", deviceError);
+    }
+
     // Find the hive by device_id
     const { data: hive, error: hiveError } = await supabase
       .from("hives")
@@ -62,13 +74,20 @@ Deno.serve(async (req) => {
       .single();
 
     if (hiveError || !hive) {
+      // Device registered but no hive linked yet — that's OK
       return new Response(
-        JSON.stringify({ error: "Hive not found for device_id", device_id: data.device_id }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ 
+          success: true, 
+          device_registered: true,
+          hive_linked: false,
+          device_id: data.device_id,
+          message: "Device registered but not yet linked to a hive" 
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Insert sensor reading and update last_seen
+    // Insert sensor reading and update last_seen on hive
     const [{ error: insertError }, { error: updateError }] = await Promise.all([
       supabase.from("sensor_readings").insert({
         hive_id: hive.id,
