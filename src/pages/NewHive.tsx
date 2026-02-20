@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +37,8 @@ export default function NewHive() {
   const [apiaryId, setApiaryId] = useState<string>('');
   const [notes, setNotes] = useState('');
 
+  const [searchParams] = useSearchParams();
+
   const [deviceValid, setDeviceValid] = useState<boolean | null>(null);
   const [deviceError, setDeviceError] = useState('');
   const [validating, setValidating] = useState(false);
@@ -45,8 +47,8 @@ export default function NewHive() {
   const [newApiaryLocation, setNewApiaryLocation] = useState('');
   const [apiaryDialogOpen, setApiaryDialogOpen] = useState(false);
 
-  const handleValidateDevice = async () => {
-    const trimmed = deviceId.trim();
+  const handleValidateDevice = useCallback(async (id?: string) => {
+    const trimmed = (id ?? deviceId).trim();
     if (!trimmed) return;
 
     setValidating(true);
@@ -76,7 +78,16 @@ export default function NewHive() {
     } finally {
       setValidating(false);
     }
-  };
+  }, [deviceId]);
+
+  // Auto-fill device_id from URL query parameter (deeplink from ESP32 captive portal)
+  useEffect(() => {
+    const urlDeviceId = searchParams.get('device_id');
+    if (urlDeviceId && !deviceId) {
+      setDeviceId(urlDeviceId);
+      handleValidateDevice(urlDeviceId);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,7 +167,7 @@ export default function NewHive() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={handleValidateDevice}
+                    onClick={() => handleValidateDevice()}
                     disabled={!deviceId.trim() || validating}
                   >
                     {validating ? (
