@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,8 @@ import { Loader2 } from 'lucide-react';
 export default function Auth() {
   const { user, loading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/dashboard';
 
   if (loading) {
     return (
@@ -22,7 +24,7 @@ export default function Auth() {
   }
 
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={redirect} replace />;
   }
 
   return (
