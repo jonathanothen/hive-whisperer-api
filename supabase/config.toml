@@ -1,1 +1,4 @@
 project_id = "kupneohhmvvokvefveau"
+
+[functions.device-command]
+verify_jwt = false
