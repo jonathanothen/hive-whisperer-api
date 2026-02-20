@@ -1,64 +1,74 @@
 
 
-# Enhetskoppling: Skydda mot att se andras enheter
+# Deeplink-baserad enhetskoppling fran ESP32 Captive Portal
 
-## Problemet
-Idag visar "Lägg till bikupa" en dropdown med ALLA okopplade enheter (`claimed_by IS NULL`). Med flera användare innebar det att:
-- Användare A ser Användare B:s enheter
-- Användare A kan av misstag (eller med flit) koppla Användare B:s enhet
+## Oversikt
+Gor det mojligt for ESP32:ns captive portal att skicka anvandaren direkt till appen med `device_id` ifyllt, sa att manuell inmatning inte behovs. Anvandaren klickar en lank i portalen, appen oppnas med device_id redan pa plats.
 
-## Losningen
-Ta bort dropdown-listan over okopplade enheter. Istallet matar anvandaren alltid in sitt `device_id` manuellt (t.ex. `BeeHivez-2B9568`), som de laser av fran ESP32:ns WiFi-namn (AP) eller captive portal.
-
-Nar anvandaren skriver in device_id validerar vi att enheten:
-1. Finns i `devices`-tabellen (dvs har skickat data)
-2. Inte redan ar kopplad till nagon annan (`claimed_by IS NULL`)
-
-## Andrade RLS-policyer
-Uppdatera `devices`-tabellens SELECT-policy sa att vanliga anvandare bara ser sina egna enheter (inte okopplade). Validering av device_id (finns den? ar den ledig?) gors i backend-funktionen istallet.
-
-## Ny backend-funktion: `validate-device`
-En enkel funktion som tar emot ett `device_id` och returnerar:
-- `{ valid: true }` om enheten finns och ar okopplad
-- `{ valid: false, reason: "not_found" }` om den inte finns
-- `{ valid: false, reason: "already_claimed" }` om den redan ar kopplad
-
-## Andringar i detalj
-
-### 1. Ny backend-funktion `validate-device`
-- Tar emot `device_id` i request body
-- Anvander service role for att kolla `devices`-tabellen
-- Returnerar status utan att avsloja vem som ager enheten
-
-### 2. Uppdatera RLS-policy pa `devices`
-- Ta bort "Users can view their own or unclaimed devices" SELECT-policy
-- Lagg till ny SELECT-policy: "Users can view their own devices" (`claimed_by = auth.uid()`)
-- Behall UPDATE-policyn som tillater claiming av okopplade enheter
-
-### 3. Uppdatera `src/pages/NewHive.tsx`
-- Ta bort dropdown med okopplade enheter
-- Ersatt med ett textfalt dar anvandaren skriver device_id
-- Lagg till en "Verifiera"-knapp som anropar `validate-device`
-- Visa gron bock om enheten ar giltig och ledig
-- Visa felmeddelande om enheten inte finns eller redan ar kopplad
-
-### 4. Uppdatera `src/hooks/useDevices.ts`
-- Ta bort `useUnclaimedDevices()` (anvands inte langre)
-- Behall `useMyDevices()` for framtida anvandning (t.ex. enhetsoversikt)
-
-### 5. Uppdatera `src/pages/NewHive.tsx` import
-- Ta bort import av `useUnclaimedDevices`
-- Lagg till anrop till `validate-device` edge function
-
-## Anvandarflode efter andringen
+## Hur det fungerar
 
 ```text
-1. Anvandaren startar sin ESP32
-2. ESP32 visar WiFi-namn: "BeeHivez-2B9568"
-3. Anvandaren oppnar appen -> "Lagg till bikupa"
-4. Skriver in "BeeHivez-2B9568" i device_id-faltet
-5. Klickar "Verifiera" -> gron bock visas
-6. Fyller i namn, bigard etc.
-7. Klickar "Skapa" -> enheten kopplas till kontot
+1. Anvandaren ansluter till ESP32:ns WiFi (BeeHivez-2B9568)
+2. Captive portalen oppnas
+3. Anvandaren konfigurerar WiFi-uppgifter
+4. Portalen visar en knapp: "Koppla enhet i appen"
+5. Knappen oppnar: https://din-app.lovable.app/claim?device_id=BeeHivez-2B9568
+6. Anvandaren byter tillbaka till sitt vanliga WiFi
+7. Appen laddas med device_id ifyllt och redo att verifiera
 ```
+
+## Andringar
+
+### 1. Ny route: `/claim`
+Skapa en ny sida `src/pages/ClaimDevice.tsx` som:
+- Laser `device_id` fran URL:ens query-parameter (`?device_id=BeeHivez-2B9568`)
+- Om anvandaren ar inloggad: visar "Lagg till bikupa"-formularet med device_id forifylt
+- Om anvandaren INTE ar inloggad: sparar device_id i `localStorage` och skickar till `/auth`. Efter inloggning redirectas tillbaka till `/claim` med device_id fran storage.
+
+### 2. Uppdatera `src/App.tsx`
+- Lagg till route `/claim` som pekar pa `ClaimDevice`
+- Routen ska vara skyddad (krava inloggning)
+
+### 3. Uppdatera `src/pages/NewHive.tsx`
+- Las av `device_id` fran URL query-parameter (for att stodja redirect fran ClaimDevice)
+- Om device_id finns i URL: for-ifyll faltet och kor validering automatiskt
+
+### 4. Alternativt: Enklare variant (rekommenderas)
+Istallet for en separat ClaimDevice-sida kan vi gora det annu enklare:
+- Lagg till stodd for query-parameter direkt i NewHive: `/dashboard/hives/new?device_id=BeeHivez-2B9568`
+- Om `device_id` finns i URL:en, for-ifyll faltet och validera automatiskt
+- Om anvandaren inte ar inloggad fanger ProtectedRoute upp det och redirectar till `/auth`
+- Efter inloggning redirectas tillbaka (vi sparar intended URL)
+
+**Jag rekommenderar den enklare varianten (4)** da den kraver minimala andringar.
+
+## Teknisk plan (enklare varianten)
+
+### Steg 1: Uppdatera NewHive.tsx
+- Anvand `useSearchParams()` for att lasa `device_id` fran URL
+- I en `useEffect`: om device_id finns, satt det i state och kor `handleValidateDevice` automatiskt
+- Resten av formularet fungerar som vanligt
+
+### Steg 2: Spara intended redirect i Auth
+- Nar ProtectedRoute redirectar till `/auth`, inkludera `redirect`-parameter sa anvandaren kommer tillbaka till ratt sida efter inloggning
+- Uppdatera Auth-sidan att lasa `redirect`-parametern och navigera dit efter lyckad inloggning
+
+### Steg 3: ESP32-sidan (din kod)
+- I captive portalens HTML, lagg till en knapp/lank:
+  `<a href="https://din-app-url/dashboard/hives/new?device_id=BeeHivez-2B9568">Koppla i appen</a>`
+- Denna URL byggs dynamiskt med enhetens `device_id`
+
+## Vad som andras i Lovable
+
+| Fil | Andring |
+|-----|---------|
+| `src/pages/NewHive.tsx` | Las device_id fran URL, auto-validera |
+| `src/App.tsx` | Uppdatera ProtectedRoute att skicka med redirect-URL |
+| `src/pages/Auth.tsx` | Hantera redirect efter inloggning |
+
+## Forberedelse for native app (senare)
+Nar appen byggs med Capacitor kan vi:
+- Registrera en custom URL scheme (t.ex. `beehivez://claim?device_id=XXX`)
+- ESP32 portalens lank anpassas baserat pa plattform
+- Lagga till WiFi SSID-detection for helt automatisk koppling
 
