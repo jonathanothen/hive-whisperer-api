@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import SensorChart from '@/components/hive/SensorChart';
 import SensorTerminal from '@/components/hive/SensorTerminal';
+import CalibrationPanel from '@/components/hive/CalibrationPanel';
 import TimeRangeSelector, { TimeRange, getDateRange } from '@/components/hive/TimeRangeSelector';
 import { getConnectionStatus, getConnectionStatusLabel, getTimeSinceContact, getTimeSinceReading } from '@/lib/sensorStatus';
 
@@ -264,6 +265,9 @@ export default function HiveDetail() {
             timeRange={timeRange}
           />
         </div>
+
+        {/* Calibration */}
+        {hive.device_id && <CalibrationPanel deviceId={hive.device_id} />}
 
         {/* Debug Terminal */}
         <SensorTerminal hiveId={id!} />

@@ -85,6 +85,42 @@ export type Database = {
         }
         Relationships: []
       }
+      device_commands: {
+        Row: {
+          cmd: string
+          created_at: string
+          device_id: string
+          executed_at: string | null
+          id: string
+          known_weight_kg: number | null
+          result: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          cmd: string
+          created_at?: string
+          device_id: string
+          executed_at?: string | null
+          id?: string
+          known_weight_kg?: number | null
+          result?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          cmd?: string
+          created_at?: string
+          device_id?: string
+          executed_at?: string | null
+          id?: string
+          known_weight_kg?: number | null
+          result?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       devices: {
         Row: {
           claimed_by: string | null
