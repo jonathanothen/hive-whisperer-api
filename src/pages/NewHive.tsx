@@ -14,10 +14,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCreateHive, useApiaries, useCreateApiary } from '@/hooks/useHives';
-import { useUnclaimedDevices } from '@/hooks/useDevices';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Plus, Wifi } from 'lucide-react';
+import { Loader2, Plus, CheckCircle2, XCircle, Search } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -29,7 +28,6 @@ import {
 export default function NewHive() {
   const navigate = useNavigate();
   const { data: apiaries } = useApiaries();
-  const { data: unclaimedDevices } = useUnclaimedDevices();
   const { user } = useAuth();
   const createHive = useCreateHive();
   const createApiary = useCreateApiary();
@@ -39,24 +37,61 @@ export default function NewHive() {
   const [apiaryId, setApiaryId] = useState<string>('');
   const [notes, setNotes] = useState('');
 
+  const [deviceValid, setDeviceValid] = useState<boolean | null>(null);
+  const [deviceError, setDeviceError] = useState('');
+  const [validating, setValidating] = useState(false);
+
   const [newApiaryName, setNewApiaryName] = useState('');
   const [newApiaryLocation, setNewApiaryLocation] = useState('');
   const [apiaryDialogOpen, setApiaryDialogOpen] = useState(false);
 
+  const handleValidateDevice = async () => {
+    const trimmed = deviceId.trim();
+    if (!trimmed) return;
+
+    setValidating(true);
+    setDeviceValid(null);
+    setDeviceError('');
+
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-device', {
+        body: { device_id: trimmed },
+      });
+
+      if (error) throw error;
+
+      if (data.valid) {
+        setDeviceValid(true);
+      } else {
+        setDeviceValid(false);
+        setDeviceError(
+          data.reason === 'not_found'
+            ? 'Enheten hittades inte. Kontrollera att din ESP32 har skickat data.'
+            : 'Enheten är redan kopplad till ett annat konto.'
+        );
+      }
+    } catch {
+      setDeviceValid(false);
+      setDeviceError('Kunde inte verifiera enheten. Försök igen.');
+    } finally {
+      setValidating(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Claim the device if one was selected
-    if (deviceId && user) {
+    // Claim the device if one was verified
+    if (deviceId.trim() && user) {
       await supabase
         .from('devices')
         .update({ claimed_by: user.id })
-        .eq('device_id', deviceId);
+        .eq('device_id', deviceId.trim());
     }
 
     const hive = await createHive.mutateAsync({
       name,
-      device_id: deviceId || undefined,
+      device_id: deviceId.trim() || undefined,
       apiary_id: apiaryId || undefined,
       notes: notes || undefined,
     });
@@ -106,46 +141,47 @@ export default function NewHive() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="device-id">Enhet</Label>
-                {unclaimedDevices && unclaimedDevices.length > 0 ? (
-                  <>
-                    <Select value={deviceId} onValueChange={setDeviceId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Välj en enhet som har skickat data..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {unclaimedDevices.map((device) => (
-                          <SelectItem key={device.device_id} value={device.device_id}>
-                            <div className="flex items-center gap-2">
-                              <Wifi className="h-3 w-3 text-green-500" />
-                              {device.device_id}
-                              {device.last_seen && (
-                                <span className="text-muted-foreground text-xs">
-                                  — senast sedd {new Date(device.last_seen).toLocaleString('sv-SE')}
-                                </span>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Enheter som skickat data men inte kopplats till en kupa ännu
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <Input
-                      id="device-id"
-                      placeholder="T.ex. BeeHivez-2B9568"
-                      value={deviceId}
-                      onChange={(e) => setDeviceId(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Inga okopplade enheter hittades. Ange device_id manuellt eller starta din ESP32 först.
-                    </p>
-                  </>
+                <Label htmlFor="device-id">Enhets-ID</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="device-id"
+                    placeholder="T.ex. BeeHivez-2B9568"
+                    value={deviceId}
+                    onChange={(e) => {
+                      setDeviceId(e.target.value);
+                      setDeviceValid(null);
+                      setDeviceError('');
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleValidateDevice}
+                    disabled={!deviceId.trim() || validating}
+                  >
+                    {validating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                    Verifiera
+                  </Button>
+                </div>
+                {deviceValid === true && (
+                  <p className="text-sm text-primary flex items-center gap-1">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Enheten är tillgänglig!
+                  </p>
                 )}
+                {deviceValid === false && deviceError && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <XCircle className="h-4 w-4" />
+                    {deviceError}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Ange enhets-ID:t som visas som WiFi-namn på din ESP32 (t.ex. BeeHivez-2B9568)
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -226,7 +262,7 @@ export default function NewHive() {
                 >
                   Avbryt
                 </Button>
-                <Button type="submit" disabled={createHive.isPending}>
+                <Button type="submit" disabled={createHive.isPending || (!!deviceId.trim() && !deviceValid)}>
                   {createHive.isPending && (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   )}
