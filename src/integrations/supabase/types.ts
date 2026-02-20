@@ -85,6 +85,30 @@ export type Database = {
         }
         Relationships: []
       }
+      devices: {
+        Row: {
+          claimed_by: string | null
+          created_at: string
+          device_id: string
+          last_seen: string | null
+          nickname: string | null
+        }
+        Insert: {
+          claimed_by?: string | null
+          created_at?: string
+          device_id: string
+          last_seen?: string | null
+          nickname?: string | null
+        }
+        Update: {
+          claimed_by?: string | null
+          created_at?: string
+          device_id?: string
+          last_seen?: string | null
+          nickname?: string | null
+        }
+        Relationships: []
+      }
       hives: {
         Row: {
           apiary_id: string | null

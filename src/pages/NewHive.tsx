@@ -14,7 +14,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCreateHive, useApiaries, useCreateApiary } from '@/hooks/useHives';
-import { Loader2, Plus } from 'lucide-react';
+import { useUnclaimedDevices } from '@/hooks/useDevices';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2, Plus, Wifi } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +29,8 @@ import {
 export default function NewHive() {
   const navigate = useNavigate();
   const { data: apiaries } = useApiaries();
+  const { data: unclaimedDevices } = useUnclaimedDevices();
+  const { user } = useAuth();
   const createHive = useCreateHive();
   const createApiary = useCreateApiary();
 
@@ -40,6 +45,14 @@ export default function NewHive() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Claim the device if one was selected
+    if (deviceId && user) {
+      await supabase
+        .from('devices')
+        .update({ claimed_by: user.id })
+        .eq('device_id', deviceId);
+    }
 
     const hive = await createHive.mutateAsync({
       name,
@@ -93,16 +106,46 @@ export default function NewHive() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="device-id">Enhets-ID</Label>
-                <Input
-                  id="device-id"
-                  placeholder="Unikt ID från ESP32"
-                  value={deviceId}
-                  onChange={(e) => setDeviceId(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Det unika ID:t som din ESP32-enhet skickar med sensordata
-                </p>
+                <Label htmlFor="device-id">Enhet</Label>
+                {unclaimedDevices && unclaimedDevices.length > 0 ? (
+                  <>
+                    <Select value={deviceId} onValueChange={setDeviceId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Välj en enhet som har skickat data..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {unclaimedDevices.map((device) => (
+                          <SelectItem key={device.device_id} value={device.device_id}>
+                            <div className="flex items-center gap-2">
+                              <Wifi className="h-3 w-3 text-green-500" />
+                              {device.device_id}
+                              {device.last_seen && (
+                                <span className="text-muted-foreground text-xs">
+                                  — senast sedd {new Date(device.last_seen).toLocaleString('sv-SE')}
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Enheter som skickat data men inte kopplats till en kupa ännu
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Input
+                      id="device-id"
+                      placeholder="T.ex. BeeHivez-2B9568"
+                      value={deviceId}
+                      onChange={(e) => setDeviceId(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Inga okopplade enheter hittades. Ange device_id manuellt eller starta din ESP32 först.
+                    </p>
+                  </>
+                )}
               </div>
 
               <div className="space-y-2">
