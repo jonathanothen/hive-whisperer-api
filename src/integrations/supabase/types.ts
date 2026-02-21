@@ -153,6 +153,7 @@ export type Database = {
           id: string
           last_seen: string | null
           name: string
+          normal_dbfs: number | null
           notes: string | null
           status: string | null
           updated_at: string
@@ -165,6 +166,7 @@ export type Database = {
           id?: string
           last_seen?: string | null
           name: string
+          normal_dbfs?: number | null
           notes?: string | null
           status?: string | null
           updated_at?: string
@@ -177,6 +179,7 @@ export type Database = {
           id?: string
           last_seen?: string | null
           name?: string
+          normal_dbfs?: number | null
           notes?: string | null
           status?: string | null
           updated_at?: string

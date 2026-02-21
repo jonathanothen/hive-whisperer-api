@@ -27,6 +27,7 @@ export interface Hive {
   notes: string | null;
   status: 'ok' | 'warning' | 'alarm';
   last_seen: string | null;
+  normal_dbfs: number | null;
   created_at: string;
   updated_at: string;
   apiary?: Apiary;

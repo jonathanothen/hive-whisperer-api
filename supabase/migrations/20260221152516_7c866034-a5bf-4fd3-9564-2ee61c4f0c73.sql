@@ -1,0 +1,1 @@
+ALTER TABLE public.hives ADD COLUMN normal_dbfs real DEFAULT NULL;

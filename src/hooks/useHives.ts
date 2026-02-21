@@ -150,6 +150,7 @@ export function useUpdateHive() {
       device_id?: string | null;
       apiary_id?: string | null;
       notes?: string | null;
+      normal_dbfs?: number | null;
     }) => {
       const { data: hive, error } = await supabase
         .from('hives')

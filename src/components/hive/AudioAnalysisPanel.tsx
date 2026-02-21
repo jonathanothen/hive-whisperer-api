@@ -1,33 +1,62 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, AudioLines, Radio } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AudioLines, Volume2 } from 'lucide-react';
 import type { SensorReading } from '@/types/hive';
+import { useUpdateHive } from '@/hooks/useHives';
 import SensorChart from './SensorChart';
 import type { TimeRange } from './TimeRangeSelector';
 
 interface AudioAnalysisPanelProps {
+  hiveId: string;
+  normalDbfs: number | null;
   latestReading?: SensorReading;
   readings: SensorReading[];
   timeRange: TimeRange;
 }
 
-export default function AudioAnalysisPanel({ latestReading, readings, timeRange }: AudioAnalysisPanelProps) {
+export default function AudioAnalysisPanel({ hiveId, normalDbfs, latestReading, readings, timeRange }: AudioAnalysisPanelProps) {
   const r = latestReading;
+  const updateHive = useUpdateHive();
 
   const hasAudioData = r && (r.dbfs != null || r.band_hum != null || r.peak_freq != null);
 
+  const handleSetNormalVolume = () => {
+    if (r?.dbfs == null) return;
+    updateHive.mutate({ id: hiveId, normal_dbfs: r.dbfs });
+  };
+
+  const deviationDb = r?.dbfs != null && normalDbfs != null ? r.dbfs - normalDbfs : null;
+
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold flex items-center gap-2">
-        <AudioLines className="h-5 w-5 text-chart-sound" />
-        Ljudanalys (Svärmdetektering)
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <AudioLines className="h-5 w-5 text-chart-sound" />
+          Ljudanalys (Svärmdetektering)
+        </h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSetNormalVolume}
+          disabled={r?.dbfs == null || updateHive.isPending}
+          className="gap-1"
+        >
+          <Volume2 className="h-4 w-4" />
+          Sätt normalvolym
+        </Button>
+      </div>
 
       {/* Current audio values */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <AudioValueCard
           label="dBFS"
           value={r?.dbfs != null ? r.dbfs.toFixed(1) : '-'}
-          description="Relativ ljudstyrka"
+          description={
+            normalDbfs != null
+              ? `Normal: ${normalDbfs.toFixed(1)} dBFS${deviationDb != null ? ` • Δ ${deviationDb > 0 ? '+' : ''}${deviationDb.toFixed(1)} dB` : ''}`
+              : 'Relativ ljudstyrka'
+          }
+          alert={deviationDb != null && Math.abs(deviationDb) > 6}
         />
         <AudioValueCard
           label="Peak-frekvens"
@@ -131,7 +160,6 @@ function AudioValueCard({
 }
 
 function BandBar({ label, value, color }: { label: string; value: number | null | undefined; color: string }) {
-  // Normalize: assume max band energy ~1.0 for display
   const pct = value != null ? Math.min(value * 100, 100) : 0;
   
   return (
