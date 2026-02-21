@@ -137,6 +137,12 @@ export default function SensorTerminal({ hiveId }: SensorTerminalProps) {
                     <span className="text-chart-humidity">hum:</span> {log.data.humidity?.toFixed(0) ?? '-'}%{' '}
                     <span className="text-chart-weight">weight:</span> {log.data.weight?.toFixed(1) ?? '-'}kg{' '}
                     <span className="text-chart-swarm">sound:</span> {log.data.sound_rms?.toFixed(0) ?? '-'}
+                    {log.data.peak_freq != null && (
+                      <>
+                        {' '}<span className="text-chart-sound">peak:</span> {log.data.peak_freq.toFixed(0)}Hz
+                        {' '}<span className="text-chart-sound">ratio:</span> {log.data.piping_ratio?.toFixed(2) ?? '-'}
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

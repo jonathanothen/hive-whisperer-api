@@ -13,6 +13,14 @@ interface SensorData {
   weight?: number;
   sound_rms?: number;
   swarm_score?: number;
+  // Audio analysis fields
+  dbfs?: number;
+  band_hum?: number;
+  band_piping?: number;
+  band_swarm?: number;
+  band_hiss?: number;
+  peak_freq?: number;
+  piping_ratio?: number;
 }
 
 Deno.serve(async (req) => {
@@ -96,6 +104,13 @@ Deno.serve(async (req) => {
         weight: data.weight,
         sound_rms: data.sound_rms,
         swarm_score: data.swarm_score,
+        dbfs: data.dbfs,
+        band_hum: data.band_hum,
+        band_piping: data.band_piping,
+        band_swarm: data.band_swarm,
+        band_hiss: data.band_hiss,
+        peak_freq: data.peak_freq,
+        piping_ratio: data.piping_ratio,
       }),
       supabase.from("hives").update({ last_seen: new Date().toISOString() }).eq("id", hive.id)
     ]);

@@ -35,6 +35,7 @@ import {
 import SensorChart from '@/components/hive/SensorChart';
 import SensorTerminal from '@/components/hive/SensorTerminal';
 import CalibrationPanel from '@/components/hive/CalibrationPanel';
+import AudioAnalysisPanel from '@/components/hive/AudioAnalysisPanel';
 import TimeRangeSelector, { TimeRange, getDateRange } from '@/components/hive/TimeRangeSelector';
 import { getConnectionStatus, getConnectionStatusLabel, getTimeSinceContact, getTimeSinceReading } from '@/lib/sensorStatus';
 
@@ -265,6 +266,13 @@ export default function HiveDetail() {
             timeRange={timeRange}
           />
         </div>
+
+        {/* Audio Analysis */}
+        <AudioAnalysisPanel
+          latestReading={reading}
+          readings={readings || []}
+          timeRange={timeRange}
+        />
 
         {/* Calibration */}
         {hive.device_id && <CalibrationPanel deviceId={hive.device_id} />}
