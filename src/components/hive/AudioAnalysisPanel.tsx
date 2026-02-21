@@ -1,56 +1,29 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { AudioLines, Volume2 } from 'lucide-react';
+import { AudioLines } from 'lucide-react';
 import type { SensorReading } from '@/types/hive';
-import { useUpdateHive } from '@/hooks/useHives';
 import SensorChart from './SensorChart';
 import type { TimeRange } from './TimeRangeSelector';
 
 interface AudioAnalysisPanelProps {
-  hiveId: string;
-  normalDbfs: number | null;
   latestReading?: SensorReading;
+  normalDbfs: number | null;
   readings: SensorReading[];
   timeRange: TimeRange;
 }
 
-export default function AudioAnalysisPanel({ hiveId, normalDbfs, latestReading, readings, timeRange }: AudioAnalysisPanelProps) {
+export default function AudioAnalysisPanel({ normalDbfs, latestReading, readings, timeRange }: AudioAnalysisPanelProps) {
   const r = latestReading;
-  const updateHive = useUpdateHive();
 
   const hasAudioData = r && (r.dbfs != null || r.band_hum != null || r.peak_freq != null);
-
-  const handleSetNormalVolume = () => {
-    // Average the last 10 dBFS readings for a stable baseline
-    const recentDbfs = readings
-      .slice(-10)
-      .map((rd) => rd.dbfs)
-      .filter((v): v is number => v != null);
-    if (recentDbfs.length === 0) return;
-    const avg = recentDbfs.reduce((s, v) => s + v, 0) / recentDbfs.length;
-    updateHive.mutate({ id: hiveId, normal_dbfs: Math.round(avg * 10) / 10 });
-  };
 
   const deviationDb = r?.dbfs != null && normalDbfs != null ? r.dbfs - normalDbfs : null;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <AudioLines className="h-5 w-5 text-chart-sound" />
-          Ljudanalys (Svärmdetektering)
-        </h2>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleSetNormalVolume}
-          disabled={r?.dbfs == null || updateHive.isPending}
-          className="gap-1"
-        >
-          <Volume2 className="h-4 w-4" />
-          Sätt normalvolym
-        </Button>
-      </div>
+      <h2 className="text-lg font-semibold flex items-center gap-2">
+        <AudioLines className="h-5 w-5 text-chart-sound" />
+        Ljudanalys (Svärmdetektering)
+      </h2>
 
       {/* Current audio values with descriptions */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
