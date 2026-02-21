@@ -52,7 +52,7 @@ export default function AudioAnalysisPanel({ hiveId, normalDbfs, latestReading, 
         </Button>
       </div>
 
-      {/* Current audio values */}
+      {/* Current audio values with descriptions */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <AudioValueCard
           label="dBFS"
@@ -60,25 +60,25 @@ export default function AudioAnalysisPanel({ hiveId, normalDbfs, latestReading, 
           description={
             normalDbfs != null
               ? `Normal: ${normalDbfs.toFixed(1)} dBFS${deviationDb != null ? ` • Δ ${deviationDb > 0 ? '+' : ''}${deviationDb.toFixed(1)} dB` : ''}`
-              : 'Relativ ljudstyrka'
+              : 'Relativ ljudstyrka i decibel. Jämförs mot normalvärde.'
           }
           alert={deviationDb != null && Math.abs(deviationDb) > 6}
         />
         <AudioValueCard
           label="Peak-frekvens"
           value={r?.peak_freq != null ? `${r.peak_freq.toFixed(0)} Hz` : '-'}
-          description="Dominerande frekvens (150–650 Hz)"
+          description="Dominerande frekvens i spektrat. Höga värden (>400 Hz) kan tyda på piping."
         />
         <AudioValueCard
           label="Piping/Hum-ratio"
           value={r?.piping_ratio != null ? r.piping_ratio.toFixed(2) : '-'}
-          description="Högt = ökad piping-aktivitet"
+          description="Kvot mellan piping- och hum-band. Värde >1.5 indikerar ökad drottningaktivitet."
           alert={r?.piping_ratio != null && r.piping_ratio > 1.5}
         />
         <AudioValueCard
           label="Svärm-score"
           value={r?.swarm_score != null ? (r.swarm_score * 100).toFixed(0) + '%' : '-'}
-          description="Heuristisk sannolikhet"
+          description="Heuristisk sannolikhet för svärmning baserat på alla ljudparametrar."
           alert={r?.swarm_score != null && r.swarm_score > 0.5}
         />
       </div>
@@ -88,12 +88,13 @@ export default function AudioAnalysisPanel({ hiveId, normalDbfs, latestReading, 
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Bandenergi (aktuellt)</CardTitle>
+            <p className="text-xs text-muted-foreground">Normaliserad energi per frekvensband från FFT-analysen.</p>
           </CardHeader>
           <CardContent className="space-y-2">
-            <BandBar label="Hum (200–300 Hz)" value={r?.band_hum} color="bg-[hsl(var(--chart-band-hum))]" />
-            <BandBar label="Piping (300–500 Hz)" value={r?.band_piping} color="bg-[hsl(var(--chart-band-piping))]" />
-            <BandBar label="Svärm (450–650 Hz)" value={r?.band_swarm} color="bg-[hsl(var(--chart-band-swarm))]" />
-            <BandBar label="Hiss (800–3000 Hz)" value={r?.band_hiss} color="bg-[hsl(var(--chart-band-hiss))]" />
+            <BandBar label="Hum (200–300 Hz)" value={r?.band_hum} color="bg-[hsl(var(--chart-band-hum))]" description="Normalt surr — friska bin." />
+            <BandBar label="Piping (300–500 Hz)" value={r?.band_piping} color="bg-[hsl(var(--chart-band-piping))]" description="Drottningpiping — kan föregå svärmning." />
+            <BandBar label="Svärm (450–650 Hz)" value={r?.band_swarm} color="bg-[hsl(var(--chart-band-swarm))]" description="Svärmsignal — förhöjt värde = hög risk." />
+            <BandBar label="Hiss (800–3000 Hz)" value={r?.band_hiss} color="bg-[hsl(var(--chart-band-hiss))]" description="Bakgrundsbrus — kan indikera stress." />
           </CardContent>
         </Card>
       )}
@@ -165,13 +166,16 @@ function AudioValueCard({
   );
 }
 
-function BandBar({ label, value, color }: { label: string; value: number | null | undefined; color: string }) {
+function BandBar({ label, value, color, description }: { label: string; value: number | null | undefined; color: string; description: string }) {
   const pct = value != null ? Math.min(value * 100, 100) : 0;
   
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-xs">
-        <span className="text-muted-foreground">{label}</span>
+        <div>
+          <span className="text-muted-foreground">{label}</span>
+          <p className="text-[10px] text-muted-foreground/70">{description}</p>
+        </div>
         <span className="font-mono">{value != null ? value.toFixed(3) : '-'}</span>
       </div>
       <div className="h-2 bg-muted rounded-full overflow-hidden">
