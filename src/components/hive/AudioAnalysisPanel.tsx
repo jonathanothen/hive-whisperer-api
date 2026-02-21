@@ -21,8 +21,14 @@ export default function AudioAnalysisPanel({ hiveId, normalDbfs, latestReading, 
   const hasAudioData = r && (r.dbfs != null || r.band_hum != null || r.peak_freq != null);
 
   const handleSetNormalVolume = () => {
-    if (r?.dbfs == null) return;
-    updateHive.mutate({ id: hiveId, normal_dbfs: r.dbfs });
+    // Average the last 10 dBFS readings for a stable baseline
+    const recentDbfs = readings
+      .slice(-10)
+      .map((rd) => rd.dbfs)
+      .filter((v): v is number => v != null);
+    if (recentDbfs.length === 0) return;
+    const avg = recentDbfs.reduce((s, v) => s + v, 0) / recentDbfs.length;
+    updateHive.mutate({ id: hiveId, normal_dbfs: Math.round(avg * 10) / 10 });
   };
 
   const deviationDb = r?.dbfs != null && normalDbfs != null ? r.dbfs - normalDbfs : null;
