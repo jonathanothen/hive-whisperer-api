@@ -222,6 +222,7 @@ export default function HiveDetail() {
         <div className="grid gap-4 grid-cols-2">
           <SensorChart
             title="Temperatur"
+            description="Inre kuptemperatur. Normalt 34–36°C vid yngel."
             data={readings || []}
             dataKey="temperature"
             name="Temperatur"
@@ -232,6 +233,7 @@ export default function HiveDetail() {
           />
           <SensorChart
             title="Luftfuktighet"
+            description="Relativ luftfuktighet i kupan. Optimalt 50–70%."
             data={readings || []}
             dataKey="humidity"
             name="Luftfuktighet"
@@ -242,6 +244,7 @@ export default function HiveDetail() {
           />
           <SensorChart
             title="Vikt"
+            description="Total kupvikt. Ökning tyder på nektarinsamling."
             data={readings || []}
             dataKey="weight"
             name="Vikt"
@@ -252,6 +255,7 @@ export default function HiveDetail() {
           />
           <SensorChart
             title="Svärm-score"
+            description="Heuristisk sannolikhet för svärmning baserat på ljud."
             data={readings || []}
             dataKey="swarm_score"
             name="Score"

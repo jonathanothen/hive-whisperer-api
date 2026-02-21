@@ -16,6 +16,7 @@ import type { TimeRange } from './TimeRangeSelector';
 
 interface SensorChartProps {
   title: string;
+  description?: string;
   data: SensorReading[];
   dataKey: keyof SensorReading;
   name: string;
@@ -26,7 +27,8 @@ interface SensorChartProps {
 }
 
 export default function SensorChart({ 
-  title, 
+  title,
+  description,
   data, 
   dataKey, 
   name, 
@@ -66,6 +68,7 @@ export default function SensorChart({
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">{title}</CardTitle>
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
       </CardHeader>
       <CardContent>
         {hasData ? (
