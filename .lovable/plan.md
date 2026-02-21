@@ -1,74 +1,67 @@
 
 
-# Deeplink-baserad enhetskoppling fran ESP32 Captive Portal
+# Kalibreringsguide - Ny wizard med battre flode
 
 ## Oversikt
-Gor det mojligt for ESP32:ns captive portal att skicka anvandaren direkt till appen med `device_id` ifyllt, sa att manuell inmatning inte behovs. Anvandaren klickar en lank i portalen, appen oppnas med device_id redan pa plats.
+Bygger om CalibrationPanel till en tydlig wizard-dialog dar kalibrering ar huvudsteget och tare ar valfritt efterat. Logiken: man maste alltid kalibrera (satta skalfaktor), men tare (nollstallning) ar valfritt beroende pa om man vill mata totalvikt eller nettovikt.
 
-## Hur det fungerar
+## Nytt flode
 
-```text
-1. Anvandaren ansluter till ESP32:ns WiFi (BeeHivez-2B9568)
-2. Captive portalen oppnas
-3. Anvandaren konfigurerar WiFi-uppgifter
-4. Portalen visar en knapp: "Koppla enhet i appen"
-5. Knappen oppnar: https://din-app.lovable.app/claim?device_id=BeeHivez-2B9568
-6. Anvandaren byter tillbaka till sitt vanliga WiFi
-7. Appen laddas med device_id ifyllt och redo att verifiera
-```
+### Huvudpanel
+Kortet visar tva knappar:
+- **"Kalibrera vag"** (primar) — oppnar kalibreringsguiden
+- **"Nollstall (tare)"** (sekundar) — oppnar en enklare tare-dialog
 
-## Andringar
+### Kalibreringsguide (Dialog med steg)
 
-### 1. Ny route: `/claim`
-Skapa en ny sida `src/pages/ClaimDevice.tsx` som:
-- Laser `device_id` fran URL:ens query-parameter (`?device_id=BeeHivez-2B9568`)
-- Om anvandaren ar inloggad: visar "Lagg till bikupa"-formularet med device_id forifylt
-- Om anvandaren INTE ar inloggad: sparar device_id i `localStorage` och skickar till `/auth`. Efter inloggning redirectas tillbaka till `/claim` med device_id fran storage.
+**Steg 1 — Tom vag**
+- Text: "Ta bort allt fran vagen. Den ska vara helt tom."
+- Knapp: "Vagen ar tom — nasta steg"
 
-### 2. Uppdatera `src/App.tsx`
-- Lagg till route `/claim` som pekar pa `ClaimDevice`
-- Routen ska vara skyddad (krava inloggning)
+**Steg 2 — Placera kand vikt**
+- Text: "Placera en kand vikt pa vagen."
+- Input-falt for vikt i kg
+- Knapp: "Vikten ar pa plats — kalibrera"
+- Skickar `sendCommand('calibrate', { known_weight_kg })`
 
-### 3. Uppdatera `src/pages/NewHive.tsx`
-- Las av `device_id` fran URL query-parameter (for att stodja redirect fran ClaimDevice)
-- Om device_id finns i URL: for-ifyll faltet och kor validering automatiskt
+**Steg 3 — Klart + valfri tare**
+- Text: "Kalibrering skickad! Enheten justerar vid nasta polling (~5 s)."
+- Fraga: "Vill du ocksa nollstalla vagen? Det ar vanligt om du vill mata enbart honungsvikt."
+- Tva knappar:
+  - "Ja, nollstall nu" — oppnar tare-stegen direkt
+  - "Nej, jag vill mata totalvikt" — stanger dialogen
 
-### 4. Alternativt: Enklare variant (rekommenderas)
-Istallet for en separat ClaimDevice-sida kan vi gora det annu enklare:
-- Lagg till stodd for query-parameter direkt i NewHive: `/dashboard/hives/new?device_id=BeeHivez-2B9568`
-- Om `device_id` finns i URL:en, for-ifyll faltet och validera automatiskt
-- Om anvandaren inte ar inloggad fanger ProtectedRoute upp det och redirectar till `/auth`
-- Efter inloggning redirectas tillbaka (vi sparar intended URL)
+**Steg 4 (om tare valdes) — Ladda vagen**
+- Text: "Stall kupan med allt material (utan honung) pa vagen. Allt som ligger pa vagen nu kommer raknas som noll."
+- Knapp: "Allt ar pa plats — nollstall"
+- Skickar `sendCommand('tare')`
 
-**Jag rekommenderar den enklare varianten (4)** da den kraver minimala andringar.
+**Steg 5 — Tare klar**
+- Text: "Nollstallning skickad! Fran och med nu visar vagen enbart tillagd vikt (t.ex. honung)."
+- Knapp: "Klar" — stanger dialogen
 
-## Teknisk plan (enklare varianten)
+### Separat Tare-dialog (for aterkommande nollstallning)
+For nar vagen redan ar kalibrerad men man vill nollstalla igen:
 
-### Steg 1: Uppdatera NewHive.tsx
-- Anvand `useSearchParams()` for att lasa `device_id` fran URL
-- I en `useEffect`: om device_id finns, satt det i state och kor `handleValidateDevice` automatiskt
-- Resten av formularet fungerar som vanligt
+**Steg 1**
+- Text: "Stall kupan med allt material (utan honung) pa vagen."
+- Knapp: "Vagen ar lastad — nollstall"
+- Skickar `sendCommand('tare')`
 
-### Steg 2: Spara intended redirect i Auth
-- Nar ProtectedRoute redirectar till `/auth`, inkludera `redirect`-parameter sa anvandaren kommer tillbaka till ratt sida efter inloggning
-- Uppdatera Auth-sidan att lasa `redirect`-parametern och navigera dit efter lyckad inloggning
+**Steg 2**
+- Text: "Nollstallning skickad! Enheten nollstaller vid nasta polling."
+- Knapp: "Klar"
 
-### Steg 3: ESP32-sidan (din kod)
-- I captive portalens HTML, lagg till en knapp/lank:
-  `<a href="https://din-app-url/dashboard/hives/new?device_id=BeeHivez-2B9568">Koppla i appen</a>`
-- Denna URL byggs dynamiskt med enhetens `device_id`
+## Tekniska detaljer
 
-## Vad som andras i Lovable
+### Fil som andras
+- `src/components/hive/CalibrationPanel.tsx` — Byggs om helt med:
+  - Tva `Dialog`-komponenter (en for kalibrering, en for fristan tare)
+  - `step`-state (number) for varje dialog
+  - Samma `sendCommand`-logik som idag (inga backend-andringar)
+  - Ikoner: `Scale`, `RotateCcw`, `ChevronRight`, `Check`, `Loader2` fran lucide-react
+  - Anvander befintliga UI-komponenter: `Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `Button`, `Input`
 
-| Fil | Andring |
-|-----|---------|
-| `src/pages/NewHive.tsx` | Las device_id fran URL, auto-validera |
-| `src/App.tsx` | Uppdatera ProtectedRoute att skicka med redirect-URL |
-| `src/pages/Auth.tsx` | Hantera redirect efter inloggning |
-
-## Forberedelse for native app (senare)
-Nar appen byggs med Capacitor kan vi:
-- Registrera en custom URL scheme (t.ex. `beehivez://claim?device_id=XXX`)
-- ESP32 portalens lank anpassas baserat pa plattform
-- Lagga till WiFi SSID-detection for helt automatisk koppling
+### Inga databas- eller backend-andringar
+Kommandona `tare` och `calibrate` fungerar redan. Bara UI-flödet ändras.
 
