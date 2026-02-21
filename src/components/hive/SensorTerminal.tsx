@@ -136,11 +136,15 @@ export default function SensorTerminal({ hiveId }: SensorTerminalProps) {
                     <span className="text-chart-temperature">temp:</span> {log.data.temperature?.toFixed(1) ?? '-'}°C{' '}
                     <span className="text-chart-humidity">hum:</span> {log.data.humidity?.toFixed(0) ?? '-'}%{' '}
                     <span className="text-chart-weight">weight:</span> {log.data.weight?.toFixed(1) ?? '-'}kg{' '}
-                    <span className="text-chart-swarm">sound:</span> {log.data.sound_rms?.toFixed(0) ?? '-'}
-                    {log.data.peak_freq != null && (
+                    <span className="text-chart-swarm">dBFS:</span> {log.data.dbfs?.toFixed(1) ?? '-'}{' '}
+                    <span className="text-chart-sound">peak:</span> {log.data.peak_freq?.toFixed(0) ?? '-'}Hz{' '}
+                    <span className="text-chart-sound">ratio:</span> {log.data.piping_ratio?.toFixed(2) ?? '-'}
+                    {log.data.band_hum != null && (
                       <>
-                        {' '}<span className="text-chart-sound">peak:</span> {log.data.peak_freq.toFixed(0)}Hz
-                        {' '}<span className="text-chart-sound">ratio:</span> {log.data.piping_ratio?.toFixed(2) ?? '-'}
+                        {' '}<span className="text-chart-band-hum">hum:</span> {log.data.band_hum.toFixed(2)}
+                        {' '}<span className="text-chart-band-piping">pip:</span> {log.data.band_piping?.toFixed(2) ?? '-'}
+                        {' '}<span className="text-chart-band-swarm">swm:</span> {log.data.band_swarm?.toFixed(2) ?? '-'}
+                        {' '}<span className="text-chart-band-hiss">hiss:</span> {log.data.band_hiss?.toFixed(2) ?? '-'}
                       </>
                     )}
                   </div>

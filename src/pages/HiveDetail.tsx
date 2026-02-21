@@ -257,12 +257,12 @@ export default function HiveDetail() {
             timeRange={timeRange}
           />
           <SensorChart
-            title="Ljudvolym"
+            title="Ljudstyrka (dBFS)"
             data={readings || []}
-            dataKey="sound_rms"
-            name="Ljudvolym (RMS)"
+            dataKey="dbfs"
+            name="dBFS"
             color="hsl(var(--chart-swarm))"
-            domain={[0, 500]}
+            domain={[-80, 0]}
             timeRange={timeRange}
           />
         </div>
