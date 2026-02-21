@@ -5,6 +5,7 @@ import { useUpdateHive } from '@/hooks/useHives';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
@@ -98,27 +99,39 @@ export default function CalibrationPanel({ deviceId, hiveId, normalDbfs, reading
             Kalibrering
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Kalibrera våg och ljudbaseline för din bikupa.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button onClick={openCalibration} className="gap-2">
-              <Scale className="h-4 w-4" />
-              Kalibrera våg
-            </Button>
-            <Button variant="outline" onClick={openTare} className="gap-2">
-              <RotateCcw className="h-4 w-4" />
-              Nollställ (tare)
-            </Button>
-            <Button variant="outline" onClick={openVolume} className="gap-2">
+        <CardContent className="space-y-5">
+          {/* Våg */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Våg</h3>
+            <p className="text-xs text-muted-foreground">
+              Kalibrera skalfaktorn med en känd vikt, eller nollställ för att mäta enbart honungsvikt.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button onClick={openCalibration} className="gap-2" size="sm">
+                <Scale className="h-4 w-4" />
+                Kalibrera våg
+              </Button>
+              <Button variant="outline" onClick={openTare} className="gap-2" size="sm">
+                <RotateCcw className="h-4 w-4" />
+                Nollställ (tare)
+              </Button>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Ljud */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Ljud</h3>
+            <p className="text-xs text-muted-foreground">
+              Sätt en baseline för normal ljudnivå. Avvikelser visas i ljudanalysen.
+              {normalDbfs != null && ` Nuvarande: ${normalDbfs.toFixed(1)} dBFS.`}
+            </p>
+            <Button variant="outline" onClick={openVolume} className="gap-2" size="sm">
               <Volume2 className="h-4 w-4" />
               Sätt normalvolym
             </Button>
           </div>
-          {normalDbfs != null && (
-            <p className="text-xs text-muted-foreground">Nuvarande normalvolym: {normalDbfs.toFixed(1)} dBFS</p>
-          )}
         </CardContent>
       </Card>
 
