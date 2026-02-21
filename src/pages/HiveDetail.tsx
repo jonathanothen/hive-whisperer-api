@@ -292,8 +292,20 @@ export default function HiveDetail() {
         {/* Calibration */}
         {hive.device_id && <CalibrationPanel deviceId={hive.device_id} />}
 
-        {/* Debug Terminal */}
-        <SensorTerminal hiveId={id!} />
+        {/* Debug Terminal — collapsible */}
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full justify-between gap-2">
+              <span className="flex items-center gap-2">
+                Sensor Terminal
+              </span>
+              <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-4">
+            <SensorTerminal hiveId={id!} />
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Info */}
         <Card>
