@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Thermometer, Droplets, Scale, Volume2, AlertTriangle, Wifi, WifiOff } from 'lucide-react';
+import { Thermometer, Droplets, Scale, AlertTriangle, Wifi, WifiOff } from 'lucide-react';
 import type { HiveWithLatestReading } from '@/types/hive';
 import { getConnectionStatus, getConnectionStatusLabel, getTimeSinceContact } from '@/lib/sensorStatus';
 
@@ -10,9 +10,17 @@ interface HiveCardProps {
   hive: HiveWithLatestReading;
 }
 
+function getSwarmLevel(score: number | null | undefined): { label: string; colorClass: string; bgClass: string } {
+  if (score == null) return { label: '-', colorClass: 'text-muted-foreground', bgClass: 'bg-muted' };
+  if (score > 0.7) return { label: 'Hög', colorClass: 'text-status-alarm', bgClass: 'bg-status-alarm/15' };
+  if (score > 0.4) return { label: 'Medel', colorClass: 'text-status-warning', bgClass: 'bg-status-warning/15' };
+  return { label: 'Låg', colorClass: 'text-status-ok', bgClass: 'bg-status-ok/15' };
+}
+
 export default function HiveCard({ hive }: HiveCardProps) {
   const reading = hive.latest_reading;
   const connectionStatus = getConnectionStatus(hive, reading);
+  const swarm = getSwarmLevel(reading?.swarm_score);
 
   const statusColors = {
     ok: 'bg-status-ok',
@@ -47,10 +55,7 @@ export default function HiveCard({ hive }: HiveCardProps) {
             </div>
             <Badge
               variant="secondary"
-              className={cn(
-                'text-white',
-                statusColors[hive.status]
-              )}
+              className={cn('text-white', statusColors[hive.status])}
             >
               {hive.status === 'alarm' && <AlertTriangle className="h-3 w-3 mr-1" />}
               {statusLabels[hive.status]}
@@ -59,31 +64,44 @@ export default function HiveCard({ hive }: HiveCardProps) {
         </CardHeader>
         <CardContent>
           {reading ? (
-            <div className="grid grid-cols-2 gap-4">
-              <DataItem
-                icon={Thermometer}
-                label="Temperatur"
-                value={reading.temperature != null ? `${reading.temperature.toFixed(1)}°C` : '-'}
-                colorClass="text-chart-temperature"
-              />
-              <DataItem
-                icon={Droplets}
-                label="Luftfuktighet"
-                value={reading.humidity != null ? `${reading.humidity.toFixed(0)}%` : '-'}
-                colorClass="text-chart-humidity"
-              />
-              <DataItem
-                icon={Scale}
-                label="Vikt"
-                value={reading.weight != null ? `${reading.weight.toFixed(1)} kg` : '-'}
-                colorClass="text-chart-weight"
-              />
-              <DataItem
-                icon={Volume2}
-                label="Svärm-score"
-                value={reading.swarm_score != null ? reading.swarm_score.toFixed(0) : '-'}
-                colorClass="text-chart-swarm"
-              />
+            <div className="space-y-3">
+              {/* Swarm score — main indicator */}
+              <div className={cn('flex items-center justify-between rounded-lg px-3 py-2', swarm.bgClass)}>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🐝</span>
+                  <span className="text-sm font-medium">Svärm-score</span>
+                </div>
+                <div className={cn('flex items-center gap-2', swarm.colorClass)}>
+                  <span className="text-xl font-bold">
+                    {reading.swarm_score != null ? `${(reading.swarm_score * 100).toFixed(0)}%` : '-'}
+                  </span>
+                  <Badge variant="outline" className={cn('text-xs', swarm.colorClass)}>
+                    {swarm.label}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Secondary metrics */}
+              <div className="grid grid-cols-3 gap-3">
+                <DataItem
+                  icon={Thermometer}
+                  label="Temp"
+                  value={reading.temperature != null ? `${reading.temperature.toFixed(1)}°` : '-'}
+                  colorClass="text-chart-temperature"
+                />
+                <DataItem
+                  icon={Droplets}
+                  label="Fukt"
+                  value={reading.humidity != null ? `${reading.humidity.toFixed(0)}%` : '-'}
+                  colorClass="text-chart-humidity"
+                />
+                <DataItem
+                  icon={Scale}
+                  label="Vikt"
+                  value={reading.weight != null ? `${reading.weight.toFixed(1)}kg` : '-'}
+                  colorClass="text-chart-weight"
+                />
+              </div>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground text-center py-4">
@@ -124,11 +142,11 @@ function DataItem({
   colorClass: string;
 }) {
   return (
-    <div className="flex items-center gap-2">
-      <Icon className={cn('h-4 w-4', colorClass)} />
+    <div className="flex items-center gap-1.5">
+      <Icon className={cn('h-3.5 w-3.5', colorClass)} />
       <div>
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="font-semibold">{value}</p>
+        <p className="text-[10px] text-muted-foreground leading-none">{label}</p>
+        <p className="text-sm font-semibold">{value}</p>
       </div>
     </div>
   );
