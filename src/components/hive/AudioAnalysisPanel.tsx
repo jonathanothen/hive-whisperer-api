@@ -103,6 +103,7 @@ export default function AudioAnalysisPanel({ hiveId, normalDbfs, latestReading, 
       <div className="grid gap-4 sm:grid-cols-2">
         <SensorChart
           title="Peak-frekvens"
+          description="Dominerande frekvens i spektrat. Höga värden (>400 Hz) kan tyda på piping."
           data={readings}
           dataKey="peak_freq"
           name="Peak Hz"
@@ -113,6 +114,7 @@ export default function AudioAnalysisPanel({ hiveId, normalDbfs, latestReading, 
         />
         <SensorChart
           title="Piping/Hum Ratio"
+          description="Kvot mellan piping- och hum-band. Värde >1.5 indikerar drottningaktivitet."
           data={readings}
           dataKey="piping_ratio"
           name="Ratio"
@@ -122,6 +124,7 @@ export default function AudioAnalysisPanel({ hiveId, normalDbfs, latestReading, 
         />
         <SensorChart
           title="dBFS"
+          description="Relativ ljudstyrka i decibel. Jämförs mot normalvärde."
           data={readings}
           dataKey="dbfs"
           name="dBFS"
@@ -132,6 +135,7 @@ export default function AudioAnalysisPanel({ hiveId, normalDbfs, latestReading, 
         />
         <SensorChart
           title="Svärm-score"
+          description="Heuristisk sannolikhet baserat på alla ljudparametrar."
           data={readings}
           dataKey="swarm_score"
           name="Score"
@@ -143,6 +147,7 @@ export default function AudioAnalysisPanel({ hiveId, normalDbfs, latestReading, 
         {/* Band energy historical charts */}
         <SensorChart
           title="Hum (200–300 Hz)"
+          description="Normalt surr — friska bin."
           data={readings}
           dataKey="band_hum"
           name="Hum"
@@ -152,6 +157,7 @@ export default function AudioAnalysisPanel({ hiveId, normalDbfs, latestReading, 
         />
         <SensorChart
           title="Piping (300–500 Hz)"
+          description="Drottningpiping — kan föregå svärmning."
           data={readings}
           dataKey="band_piping"
           name="Piping"
@@ -161,6 +167,7 @@ export default function AudioAnalysisPanel({ hiveId, normalDbfs, latestReading, 
         />
         <SensorChart
           title="Svärm (450–650 Hz)"
+          description="Svärmsignal — förhöjt värde = hög risk."
           data={readings}
           dataKey="band_swarm"
           name="Svärm"
@@ -170,6 +177,7 @@ export default function AudioAnalysisPanel({ hiveId, normalDbfs, latestReading, 
         />
         <SensorChart
           title="Hiss (800–3000 Hz)"
+          description="Bakgrundsbrus — kan indikera stress."
           data={readings}
           dataKey="band_hiss"
           name="Hiss"
