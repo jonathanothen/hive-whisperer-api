@@ -33,7 +33,7 @@ export default function AudioTrend24h({ hiveId }: AudioTrend24hProps) {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Senaste 24h — trender</h2>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <SensorChart
           title="Svärm-score"
           data={data}
@@ -51,15 +51,6 @@ export default function AudioTrend24h({ hiveId }: AudioTrend24hProps) {
           color="hsl(var(--chart-sound))"
           unit=" dBFS"
           domain={[-80, 0]}
-          timeRange="day"
-        />
-        <SensorChart
-          title="Band Svärm"
-          data={data}
-          dataKey="band_swarm"
-          name="Svärm"
-          color="hsl(var(--chart-band-swarm))"
-          domain={[0, 1]}
           timeRange="day"
         />
         <SensorChart

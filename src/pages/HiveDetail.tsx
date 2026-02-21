@@ -187,11 +187,9 @@ export default function HiveDetail() {
           </div>
         </div>
 
-        {/* Swarm score — main indicator */}
-        <SwarmScoreGauge score={reading?.swarm_score} />
-
-        {/* Current values */}
-        <div className="grid gap-4 sm:grid-cols-3">
+        {/* Primary indicators — swarm score + environment */}
+        <div className="grid gap-4 sm:grid-cols-4">
+          <SwarmScoreGauge score={reading?.swarm_score} />
           <ValueCard
             icon={Thermometer}
             label="Temperatur"
@@ -212,31 +210,6 @@ export default function HiveDetail() {
           />
         </div>
 
-        {/* 24h Audio Trends */}
-        <AudioTrend24h hiveId={id!} />
-
-        {/* Audio details — collapsible */}
-        <Collapsible open={audioOpen} onOpenChange={setAudioOpen}>
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" className="w-full justify-between gap-2">
-              <span className="flex items-center gap-2">
-                <AudioLines className="h-4 w-4" />
-                Audio detaljer
-              </span>
-              <ChevronDown className={cn('h-4 w-4 transition-transform', audioOpen && 'rotate-180')} />
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-4">
-            <AudioAnalysisPanel
-              hiveId={id!}
-              normalDbfs={hive.normal_dbfs ?? null}
-              latestReading={reading}
-              readings={readings || []}
-              timeRange={timeRange}
-            />
-          </CollapsibleContent>
-        </Collapsible>
-
         {/* Time Range Selector */}
         <TimeRangeSelector
           range={timeRange}
@@ -245,8 +218,8 @@ export default function HiveDetail() {
           onDateChange={setSelectedDate}
         />
 
-        {/* Charts */}
-        <div className="grid gap-4 sm:grid-cols-2">
+        {/* Main charts — temp, humidity, weight */}
+        <div className="grid gap-4 sm:grid-cols-3">
           <SensorChart
             title="Temperatur"
             data={readings || []}
@@ -278,6 +251,32 @@ export default function HiveDetail() {
             timeRange={timeRange}
           />
         </div>
+
+        {/* 24h Audio Trends */}
+        <AudioTrend24h hiveId={id!} />
+
+        {/* Audio details — collapsible */}
+        <Collapsible open={audioOpen} onOpenChange={setAudioOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full justify-between gap-2">
+              <span className="flex items-center gap-2">
+                <AudioLines className="h-4 w-4" />
+                Audio detaljer
+              </span>
+              <ChevronDown className={cn('h-4 w-4 transition-transform', audioOpen && 'rotate-180')} />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-4">
+            <AudioAnalysisPanel
+              hiveId={id!}
+              normalDbfs={hive.normal_dbfs ?? null}
+              latestReading={reading}
+              readings={readings || []}
+              timeRange={timeRange}
+            />
+          </CollapsibleContent>
+        </Collapsible>
+
 
         {/* Calibration */}
         {hive.device_id && <CalibrationPanel deviceId={hive.device_id} />}
