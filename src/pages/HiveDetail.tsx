@@ -274,28 +274,6 @@ export default function HiveDetail() {
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-4 space-y-4">
-            {/* dBFS & piping trend charts */}
-            <div className="grid gap-4 grid-cols-2">
-              <SensorChart
-                title="dBFS"
-                data={readings || []}
-                dataKey="dbfs"
-                name="dBFS"
-                color="hsl(var(--chart-sound))"
-                unit=" dBFS"
-                domain={[-80, 0]}
-                timeRange={timeRange}
-              />
-              <SensorChart
-                title="Piping/Hum Ratio"
-                data={readings || []}
-                dataKey="piping_ratio"
-                name="Ratio"
-                color="hsl(var(--chart-band-piping))"
-                domain={[0, 5]}
-                timeRange={timeRange}
-              />
-            </div>
             <AudioAnalysisPanel
               hiveId={id!}
               normalDbfs={hive.normal_dbfs ?? null}
