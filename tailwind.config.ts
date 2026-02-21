@@ -68,6 +68,11 @@ export default {
           weight: "hsl(var(--chart-weight))",
           sound: "hsl(var(--chart-sound))",
           swarm: "hsl(var(--chart-swarm))",
+          "band-hum": "hsl(var(--chart-band-hum))",
+          "band-piping": "hsl(var(--chart-band-piping))",
+          "band-swarm": "hsl(var(--chart-band-swarm))",
+          "band-hiss": "hsl(var(--chart-band-hiss))",
+          "peak-freq": "hsl(var(--chart-peak-freq))",
         },
       },
       borderRadius: {

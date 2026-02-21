@@ -40,6 +40,13 @@ export interface SensorReading {
   weight: number | null;
   sound_rms: number | null;
   swarm_score: number | null;
+  dbfs: number | null;
+  band_hum: number | null;
+  band_piping: number | null;
+  band_swarm: number | null;
+  band_hiss: number | null;
+  peak_freq: number | null;
+  piping_ratio: number | null;
   recorded_at: string;
 }
 

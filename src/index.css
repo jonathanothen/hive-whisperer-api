@@ -51,6 +51,13 @@
     --chart-sound: 280 65% 60%;
     --chart-swarm: 38 92% 50%;
 
+    /* Audio analysis colors */
+    --chart-band-hum: 180 60% 45%;
+    --chart-band-piping: 320 70% 55%;
+    --chart-band-swarm: 30 90% 55%;
+    --chart-band-hiss: 200 40% 50%;
+    --chart-peak-freq: 260 70% 60%;
+
     --sidebar-background: 40 15% 96%;
     --sidebar-foreground: 30 10% 20%;
     --sidebar-primary: 38 92% 50%;

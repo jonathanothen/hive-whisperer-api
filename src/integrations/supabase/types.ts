@@ -224,9 +224,16 @@ export type Database = {
       }
       sensor_readings: {
         Row: {
+          band_hiss: number | null
+          band_hum: number | null
+          band_piping: number | null
+          band_swarm: number | null
+          dbfs: number | null
           hive_id: string
           humidity: number | null
           id: string
+          peak_freq: number | null
+          piping_ratio: number | null
           recorded_at: string
           sound_rms: number | null
           swarm_score: number | null
@@ -234,9 +241,16 @@ export type Database = {
           weight: number | null
         }
         Insert: {
+          band_hiss?: number | null
+          band_hum?: number | null
+          band_piping?: number | null
+          band_swarm?: number | null
+          dbfs?: number | null
           hive_id: string
           humidity?: number | null
           id?: string
+          peak_freq?: number | null
+          piping_ratio?: number | null
           recorded_at?: string
           sound_rms?: number | null
           swarm_score?: number | null
@@ -244,9 +258,16 @@ export type Database = {
           weight?: number | null
         }
         Update: {
+          band_hiss?: number | null
+          band_hum?: number | null
+          band_piping?: number | null
+          band_swarm?: number | null
+          dbfs?: number | null
           hive_id?: string
           humidity?: number | null
           id?: string
+          peak_freq?: number | null
+          piping_ratio?: number | null
           recorded_at?: string
           sound_rms?: number | null
           swarm_score?: number | null

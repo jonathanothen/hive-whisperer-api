@@ -10,6 +10,13 @@ export interface AggregatedReading {
   weight: number | null;
   sound_rms: number | null;
   swarm_score: number | null;
+  dbfs: number | null;
+  band_hum: number | null;
+  band_piping: number | null;
+  band_swarm: number | null;
+  band_hiss: number | null;
+  peak_freq: number | null;
+  piping_ratio: number | null;
   count: number;
 }
 
@@ -64,6 +71,13 @@ export function aggregateSensorData(readings: SensorReading[], range: TimeRange)
       weight: calculateAverage(group.map(r => r.weight)),
       sound_rms: calculateAverage(group.map(r => r.sound_rms)),
       swarm_score: calculateAverage(group.map(r => r.swarm_score)),
+      dbfs: calculateAverage(group.map(r => r.dbfs)),
+      band_hum: calculateAverage(group.map(r => r.band_hum)),
+      band_piping: calculateAverage(group.map(r => r.band_piping)),
+      band_swarm: calculateAverage(group.map(r => r.band_swarm)),
+      band_hiss: calculateAverage(group.map(r => r.band_hiss)),
+      peak_freq: calculateAverage(group.map(r => r.peak_freq)),
+      piping_ratio: calculateAverage(group.map(r => r.piping_ratio)),
       count: group.length,
     });
   }
