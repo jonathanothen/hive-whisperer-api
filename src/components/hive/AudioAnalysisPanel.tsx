@@ -139,6 +139,44 @@ export default function AudioAnalysisPanel({ hiveId, normalDbfs, latestReading, 
           domain={[0, 1]}
           timeRange={timeRange}
         />
+
+        {/* Band energy historical charts */}
+        <SensorChart
+          title="Hum (200–300 Hz)"
+          data={readings}
+          dataKey="band_hum"
+          name="Hum"
+          color="hsl(var(--chart-band-hum))"
+          domain={[0, 0.5]}
+          timeRange={timeRange}
+        />
+        <SensorChart
+          title="Piping (300–500 Hz)"
+          data={readings}
+          dataKey="band_piping"
+          name="Piping"
+          color="hsl(var(--chart-band-piping))"
+          domain={[0, 0.5]}
+          timeRange={timeRange}
+        />
+        <SensorChart
+          title="Svärm (450–650 Hz)"
+          data={readings}
+          dataKey="band_swarm"
+          name="Svärm"
+          color="hsl(var(--chart-band-swarm))"
+          domain={[0, 0.5]}
+          timeRange={timeRange}
+        />
+        <SensorChart
+          title="Hiss (800–3000 Hz)"
+          data={readings}
+          dataKey="band_hiss"
+          name="Hiss"
+          color="hsl(var(--chart-band-hiss))"
+          domain={[0, 0.5]}
+          timeRange={timeRange}
+        />
       </div>
     </div>
   );
