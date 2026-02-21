@@ -55,7 +55,7 @@ export interface Alert {
   id: string;
   hive_id: string;
   user_id: string;
-  alert_type: 'warning' | 'alarm';
+  alert_type: 'warning' | 'alarm' | 'critical';
   message: string;
   acknowledged: boolean;
   sms_sent: boolean;

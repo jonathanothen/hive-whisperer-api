@@ -127,18 +127,78 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check for swarm alerts
+    // ── Weight drop detection ──
+    let weightAlertType: string | null = null;
+    let weightAlertMessage: string | null = null;
+
+    if (data.weight != null) {
+      // Fetch the last 3 readings (excluding the one we just inserted) to compare
+      const { data: recentReadings } = await supabase
+        .from("sensor_readings")
+        .select("weight, recorded_at")
+        .eq("hive_id", hive.id)
+        .not("weight", "is", null)
+        .order("recorded_at", { ascending: false })
+        .limit(4); // current + 3 previous
+
+      if (recentReadings && recentReadings.length >= 2) {
+        const current = recentReadings[0];
+        const prev1 = recentReadings[1];
+
+        const drop1 = (prev1.weight as number) - (current.weight as number);
+
+        // Rapid Weight Drop: ≥1.0 kg between two consecutive readings
+        if (drop1 >= 1.0) {
+          weightAlertType = "critical";
+          weightAlertMessage = `🚨 Snabb viktminskning! -${drop1.toFixed(1)} kg på ~5 min (${(prev1.weight as number).toFixed(1)} → ${(current.weight as number).toFixed(1)} kg)`;
+        }
+
+        // Possible Swarm: ≥1.0 kg over 3 consecutive readings (ignore <0.2 kg noise)
+        if (!weightAlertType && recentReadings.length >= 3) {
+          const prev2 = recentReadings[2];
+          const drop12 = (prev2.weight as number) - (prev1.weight as number);
+          const totalDrop = (prev2.weight as number) - (current.weight as number);
+
+          // Both individual drops must be > noise threshold (0.2 kg)
+          if (totalDrop >= 1.0 && drop12 > 0.2 && drop1 > 0.2) {
+            weightAlertType = "alarm";
+            weightAlertMessage = `⚠️ Möjlig svärmning! Vikten har minskat ${totalDrop.toFixed(1)} kg över 3 mätningar (${(prev2.weight as number).toFixed(1)} → ${(current.weight as number).toFixed(1)} kg)`;
+          }
+        }
+      }
+    }
+
+    // ── Swarm score alerts ──
     let newStatus: "ok" | "warning" | "alarm" = "ok";
     let alertCreated = false;
+
+    if (weightAlertType === "critical") {
+      newStatus = "alarm";
+      await supabase.from("alerts").insert({
+        hive_id: hive.id,
+        user_id: hive.user_id,
+        alert_type: "critical",
+        message: weightAlertMessage,
+      });
+      alertCreated = true;
+    } else if (weightAlertType === "alarm") {
+      newStatus = "alarm";
+      await supabase.from("alerts").insert({
+        hive_id: hive.id,
+        user_id: hive.user_id,
+        alert_type: "alarm",
+        message: weightAlertMessage,
+      });
+      alertCreated = true;
+    }
 
     if (data.swarm_score !== undefined) {
       const WARN_THRESHOLD = 50;
       const ALARM_THRESHOLD = 80;
 
       if (data.swarm_score >= ALARM_THRESHOLD) {
-        newStatus = "alarm";
+        if (newStatus !== "alarm") newStatus = "alarm";
         
-        // Create alarm alert
         await supabase.from("alerts").insert({
           hive_id: hive.id,
           user_id: hive.user_id,
@@ -148,9 +208,8 @@ Deno.serve(async (req) => {
         alertCreated = true;
 
       } else if (data.swarm_score >= WARN_THRESHOLD) {
-        newStatus = "warning";
+        if (newStatus === "ok") newStatus = "warning";
         
-        // Create warning alert
         await supabase.from("alerts").insert({
           hive_id: hive.id,
           user_id: hive.user_id,
