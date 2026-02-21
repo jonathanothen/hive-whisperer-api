@@ -18,7 +18,7 @@ export default function SwarmScoreGauge({ score }: SwarmScoreGaugeProps) {
   const pct = score != null ? Math.min(score * 100, 100) : 0;
 
   return (
-    <Card className={cn('col-span-full', info.bgClass)}>
+    <Card className={cn(info.bgClass)}>
       <CardContent className="py-4">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
