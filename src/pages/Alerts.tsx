@@ -81,7 +81,7 @@ interface AlertCardProps {
   alert: {
     id: string;
     hive_id: string;
-    alert_type: 'warning' | 'alarm';
+    alert_type: 'warning' | 'alarm' | 'critical';
     message: string;
     created_at: string;
     sms_sent: boolean;
@@ -92,7 +92,8 @@ interface AlertCardProps {
 }
 
 function AlertCard({ alert, acknowledged, onAcknowledge }: AlertCardProps) {
-  const isAlarm = alert.alert_type === 'alarm';
+  const isCritical = alert.alert_type === 'critical';
+  const isAlarm = alert.alert_type === 'alarm' || isCritical;
 
   return (
     <Card
@@ -119,7 +120,7 @@ function AlertCard({ alert, acknowledged, onAcknowledge }: AlertCardProps) {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Badge variant={isAlarm ? 'destructive' : 'secondary'}>
-                {isAlarm ? 'Larm' : 'Varning'}
+                {isCritical ? 'Kritisk' : isAlarm ? 'Larm' : 'Varning'}
               </Badge>
               {alert.hive && (
                 <Link

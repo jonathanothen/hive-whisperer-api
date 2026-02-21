@@ -27,7 +27,12 @@ export function useAlerts() {
           queryClient.invalidateQueries({ queryKey: ['alerts'] });
           
           const alert = payload.new as Alert;
-          if (alert.alert_type === 'alarm') {
+          if (alert.alert_type === 'critical') {
+            toast.error('🚨 KRITISK VARNING!', {
+              description: alert.message,
+              duration: 15000,
+            });
+          } else if (alert.alert_type === 'alarm') {
             toast.error('🚨 Larm!', {
               description: alert.message,
               duration: 10000,
@@ -62,7 +67,7 @@ export function useAlerts() {
       if (error) throw error;
       return (data || []).map((item) => ({
         ...item,
-        alert_type: item.alert_type as 'warning' | 'alarm',
+        alert_type: item.alert_type as 'warning' | 'alarm' | 'critical',
       }));
     },
     enabled: !!user,
