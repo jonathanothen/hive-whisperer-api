@@ -266,6 +266,16 @@ export default function HiveDetail() {
         </div>
 
 
+        {/* Calibration */}
+        {hive.device_id && (
+          <CalibrationPanel
+            deviceId={hive.device_id}
+            hiveId={id!}
+            normalDbfs={hive.normal_dbfs ?? null}
+            readings={readings || []}
+          />
+        )}
+
         {/* Audio details — collapsible */}
         <Collapsible open={audioOpen} onOpenChange={setAudioOpen}>
           <CollapsibleTrigger asChild>
@@ -279,7 +289,6 @@ export default function HiveDetail() {
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-4 space-y-4">
             <AudioAnalysisPanel
-              hiveId={id!}
               normalDbfs={hive.normal_dbfs ?? null}
               latestReading={reading}
               readings={readings || []}
@@ -287,10 +296,6 @@ export default function HiveDetail() {
             />
           </CollapsibleContent>
         </Collapsible>
-
-
-        {/* Calibration */}
-        {hive.device_id && <CalibrationPanel deviceId={hive.device_id} />}
 
         {/* Debug Terminal — collapsible */}
         <Collapsible>
