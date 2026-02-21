@@ -187,8 +187,8 @@ export default function HiveDetail() {
           </div>
         </div>
 
-        {/* Primary indicators */}
-        <div className="grid gap-4 grid-cols-3">
+        {/* Primary indicators — 2x2 grid */}
+        <div className="grid gap-4 grid-cols-2">
           <ValueCard
             icon={Thermometer}
             label="Temperatur"
@@ -207,8 +207,8 @@ export default function HiveDetail() {
             value={reading?.weight != null ? `${reading.weight.toFixed(1)} kg` : '-'}
             colorClass="text-chart-weight"
           />
+          <SwarmScoreGauge score={reading?.swarm_score} />
         </div>
-        <SwarmScoreGauge score={reading?.swarm_score} />
 
         {/* Time Range Selector */}
         <TimeRangeSelector
