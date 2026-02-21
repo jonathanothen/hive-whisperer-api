@@ -269,6 +269,8 @@ export default function HiveDetail() {
 
         {/* Audio Analysis */}
         <AudioAnalysisPanel
+          hiveId={id!}
+          normalDbfs={hive.normal_dbfs ?? null}
           latestReading={reading}
           readings={readings || []}
           timeRange={timeRange}
