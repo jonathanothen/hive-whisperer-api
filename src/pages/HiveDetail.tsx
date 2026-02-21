@@ -15,11 +15,12 @@ import {
   Thermometer,
   Droplets,
   Scale,
-  Volume2,
   AlertTriangle,
   Wifi,
   WifiOff,
   Loader2,
+  ChevronDown,
+  AudioLines,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -32,21 +33,25 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import SensorChart from '@/components/hive/SensorChart';
 import SensorTerminal from '@/components/hive/SensorTerminal';
 import CalibrationPanel from '@/components/hive/CalibrationPanel';
 import AudioAnalysisPanel from '@/components/hive/AudioAnalysisPanel';
+import SwarmScoreGauge from '@/components/hive/SwarmScoreGauge';
+import AudioTrend24h from '@/components/hive/AudioTrend24h';
 import TimeRangeSelector, { TimeRange, getDateRange } from '@/components/hive/TimeRangeSelector';
-import { getConnectionStatus, getConnectionStatusLabel, getTimeSinceContact, getTimeSinceReading } from '@/lib/sensorStatus';
+import { getConnectionStatus, getConnectionStatusLabel, getTimeSinceContact } from '@/lib/sensorStatus';
 
 export default function HiveDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState<TimeRange>('day');
   const [selectedDate, setSelectedDate] = useState(new Date());
-  
+  const [audioOpen, setAudioOpen] = useState(false);
+
   const dateRange = getDateRange(timeRange, selectedDate);
-  
+
   const { data: hive, isLoading, isFetching, refetch } = useHive(id!);
   const { data: readings } = useSensorReadings(id!, dateRange);
   const deleteHive = useDeleteHive();
@@ -94,12 +99,6 @@ export default function HiveDetail() {
 
   const reading = hive.latest_reading;
   const connectionStatus = getConnectionStatus(hive, reading);
-
-  const connectionColors = {
-    online: 'bg-status-ok',
-    stale: 'bg-status-warning',
-    offline: 'bg-muted',
-  };
 
   const connectionTextColors = {
     online: 'text-status-ok',
@@ -188,8 +187,11 @@ export default function HiveDetail() {
           </div>
         </div>
 
+        {/* Swarm score — main indicator */}
+        <SwarmScoreGauge score={reading?.swarm_score} />
+
         {/* Current values */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-3">
           <ValueCard
             icon={Thermometer}
             label="Temperatur"
@@ -208,13 +210,32 @@ export default function HiveDetail() {
             value={reading?.weight != null ? `${reading.weight.toFixed(1)} kg` : '-'}
             colorClass="text-chart-weight"
           />
-          <ValueCard
-            icon={Volume2}
-            label="Svärm-score"
-            value={reading?.swarm_score != null ? reading.swarm_score.toFixed(0) : '-'}
-            colorClass="text-chart-swarm"
-          />
         </div>
+
+        {/* 24h Audio Trends */}
+        <AudioTrend24h hiveId={id!} />
+
+        {/* Audio details — collapsible */}
+        <Collapsible open={audioOpen} onOpenChange={setAudioOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full justify-between gap-2">
+              <span className="flex items-center gap-2">
+                <AudioLines className="h-4 w-4" />
+                Audio detaljer
+              </span>
+              <ChevronDown className={cn('h-4 w-4 transition-transform', audioOpen && 'rotate-180')} />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-4">
+            <AudioAnalysisPanel
+              hiveId={id!}
+              normalDbfs={hive.normal_dbfs ?? null}
+              latestReading={reading}
+              readings={readings || []}
+              timeRange={timeRange}
+            />
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Time Range Selector */}
         <TimeRangeSelector
@@ -256,25 +277,7 @@ export default function HiveDetail() {
             domain={[0, 100]}
             timeRange={timeRange}
           />
-          <SensorChart
-            title="Ljudstyrka (dBFS)"
-            data={readings || []}
-            dataKey="dbfs"
-            name="dBFS"
-            color="hsl(var(--chart-swarm))"
-            domain={[-80, 0]}
-            timeRange={timeRange}
-          />
         </div>
-
-        {/* Audio Analysis */}
-        <AudioAnalysisPanel
-          hiveId={id!}
-          normalDbfs={hive.normal_dbfs ?? null}
-          latestReading={reading}
-          readings={readings || []}
-          timeRange={timeRange}
-        />
 
         {/* Calibration */}
         {hive.device_id && <CalibrationPanel deviceId={hive.device_id} />}
