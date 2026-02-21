@@ -39,7 +39,7 @@ import SensorTerminal from '@/components/hive/SensorTerminal';
 import CalibrationPanel from '@/components/hive/CalibrationPanel';
 import AudioAnalysisPanel from '@/components/hive/AudioAnalysisPanel';
 import SwarmScoreGauge from '@/components/hive/SwarmScoreGauge';
-import AudioTrend24h from '@/components/hive/AudioTrend24h';
+// AudioTrend24h removed — dBFS/piping charts moved into collapsible audio details
 import TimeRangeSelector, { TimeRange, getDateRange } from '@/components/hive/TimeRangeSelector';
 import { getConnectionStatus, getConnectionStatusLabel, getTimeSinceContact } from '@/lib/sensorStatus';
 
@@ -188,7 +188,7 @@ export default function HiveDetail() {
         </div>
 
         {/* Primary indicators — swarm score + environment */}
-        <div className="grid gap-4 sm:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2">
           <SwarmScoreGauge score={reading?.swarm_score} />
           <ValueCard
             icon={Thermometer}
@@ -218,8 +218,8 @@ export default function HiveDetail() {
           onDateChange={setSelectedDate}
         />
 
-        {/* Main charts — temp, humidity, weight */}
-        <div className="grid gap-4 sm:grid-cols-3">
+        {/* Main charts — temp, humidity, weight, swarm score */}
+        <div className="grid gap-4 grid-cols-2">
           <SensorChart
             title="Temperatur"
             data={readings || []}
@@ -250,10 +250,17 @@ export default function HiveDetail() {
             domain={[0, 100]}
             timeRange={timeRange}
           />
+          <SensorChart
+            title="Svärm-score"
+            data={readings || []}
+            dataKey="swarm_score"
+            name="Score"
+            color="hsl(var(--chart-swarm))"
+            domain={[0, 1]}
+            timeRange={timeRange}
+          />
         </div>
 
-        {/* 24h Audio Trends */}
-        <AudioTrend24h hiveId={id!} />
 
         {/* Audio details — collapsible */}
         <Collapsible open={audioOpen} onOpenChange={setAudioOpen}>
@@ -266,7 +273,29 @@ export default function HiveDetail() {
               <ChevronDown className={cn('h-4 w-4 transition-transform', audioOpen && 'rotate-180')} />
             </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent className="pt-4">
+          <CollapsibleContent className="pt-4 space-y-4">
+            {/* dBFS & piping trend charts */}
+            <div className="grid gap-4 grid-cols-2">
+              <SensorChart
+                title="dBFS"
+                data={readings || []}
+                dataKey="dbfs"
+                name="dBFS"
+                color="hsl(var(--chart-sound))"
+                unit=" dBFS"
+                domain={[-80, 0]}
+                timeRange={timeRange}
+              />
+              <SensorChart
+                title="Piping/Hum Ratio"
+                data={readings || []}
+                dataKey="piping_ratio"
+                name="Ratio"
+                color="hsl(var(--chart-band-piping))"
+                domain={[0, 5]}
+                timeRange={timeRange}
+              />
+            </div>
             <AudioAnalysisPanel
               hiveId={id!}
               normalDbfs={hive.normal_dbfs ?? null}
