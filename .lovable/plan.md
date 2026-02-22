@@ -1,67 +1,43 @@
 
+## dB SPL-graf med konvertering fran MSM261S4030H0R
 
-# Kalibreringsguide - Ny wizard med battre flode
+### Bakgrund
 
-## Oversikt
-Bygger om CalibrationPanel till en tydlig wizard-dialog dar kalibrering ar huvudsteget och tare ar valfritt efterat. Logiken: man maste alltid kalibrera (satta skalfaktor), men tare (nollstallning) ar valfritt beroende pa om man vill mata totalvikt eller nettovikt.
+Mikrofonen MSM261S4030H0R har foljande specifikationer:
+- Sensitivity: -26 dBFS (typ) vid 94 dB SPL, 1 kHz
+- AOP: 120 dB SPL
+- Konverteringsformel: `dB SPL = dBFS + 120` (dvs. `94 + (dBFS - (-26))`)
 
-## Nytt flode
+### Andringar
 
-### Huvudpanel
-Kortet visar tva knappar:
-- **"Kalibrera vag"** (primar) — oppnar kalibreringsguiden
-- **"Nollstall (tare)"** (sekundar) — oppnar en enklare tare-dialog
+**1. Lagg till `db_spl` i aggregeringen (`src/lib/aggregateSensorData.ts`)**
+- Lagg till ett beraknat falt `db_spl` i `AggregatedReading`
+- Berakna det fran `dbfs` med formeln: `dbfs + 120` (offset = 94 - (-26) = 120)
+- Detta gor att grafen kan anvanda samma SensorChart-komponent
 
-### Kalibreringsguide (Dialog med steg)
+**2. Lagg till dB SPL-graf i AudioAnalysisPanel (`src/components/hive/AudioAnalysisPanel.tsx`)**
+- Lagg till ett nytt AudioValueCard for "~dB SPL" som visar det konverterade vardet fran senaste matningen
+- Beskrivning: "Uppskattad ljudniva (MSM261S4030H0R, S=-26 dBFS). Kan avvika upp till +-3 dB fran verkligt varde."
+- Lagg till en SensorChart for "~dB SPL (uppskattad)" i historik-sektionen
+  - Domian: [20, 120]
+  - Beskrivning namnder att konverteringen bygger pa databladets typvarde och att RMS vs peak kan ge upp till 3 dB avvikelse
 
-**Steg 1 — Tom vag**
-- Text: "Ta bort allt fran vagen. Den ska vara helt tom."
-- Knapp: "Vagen ar tom — nasta steg"
+**3. Lagg till dB SPL-graf i HiveDetail huvudvyn (`src/pages/HiveDetail.tsx`)**
+- Ersatt den befintliga dBFS-grafen under "Audio detaljer" med en dB SPL-graf, eller lagg till den bredvid
+- Behall dBFS-grafen i audio-detaljerna for den som vill se ravarden
 
-**Steg 2 — Placera kand vikt**
-- Text: "Placera en kand vikt pa vagen."
-- Input-falt for vikt i kg
-- Knapp: "Vikten ar pa plats — kalibrera"
-- Skickar `sendCommand('calibrate', { known_weight_kg })`
+### Tekniska detaljer
 
-**Steg 3 — Klart + valfri tare**
-- Text: "Kalibrering skickad! Enheten justerar vid nasta polling (~5 s)."
-- Fraga: "Vill du ocksa nollstalla vagen? Det ar vanligt om du vill mata enbart honungsvikt."
-- Tva knappar:
-  - "Ja, nollstall nu" — oppnar tare-stegen direkt
-  - "Nej, jag vill mata totalvikt" — stanger dialogen
+Konverteringskonstanten definieras som:
 
-**Steg 4 (om tare valdes) — Ladda vagen**
-- Text: "Stall kupan med allt material (utan honung) pa vagen. Allt som ligger pa vagen nu kommer raknas som noll."
-- Knapp: "Allt ar pa plats — nollstall"
-- Skickar `sendCommand('tare')`
+```text
+MIC_SENSITIVITY_DBFS = -26   // typ fran datablad
+REF_SPL = 94                 // dB SPL vid kalibreringsreferens
+OFFSET = REF_SPL - MIC_SENSITIVITY_DBFS  // = 120
 
-**Steg 5 — Tare klar**
-- Text: "Nollstallning skickad! Fran och med nu visar vagen enbart tillagd vikt (t.ex. honung)."
-- Knapp: "Klar" — stanger dialogen
+db_spl = dbfs + OFFSET
+```
 
-### Separat Tare-dialog (for aterkommande nollstallning)
-For nar vagen redan ar kalibrerad men man vill nollstalla igen:
+Aggregeringen beraknar `db_spl` direkt fran det aggregerade `dbfs`-vardet sa att ingen ny databaskolumn behovs.
 
-**Steg 1**
-- Text: "Stall kupan med allt material (utan honung) pa vagen."
-- Knapp: "Vagen ar lastad — nollstall"
-- Skickar `sendCommand('tare')`
-
-**Steg 2**
-- Text: "Nollstallning skickad! Enheten nollstaller vid nasta polling."
-- Knapp: "Klar"
-
-## Tekniska detaljer
-
-### Fil som andras
-- `src/components/hive/CalibrationPanel.tsx` — Byggs om helt med:
-  - Tva `Dialog`-komponenter (en for kalibrering, en for fristan tare)
-  - `step`-state (number) for varje dialog
-  - Samma `sendCommand`-logik som idag (inga backend-andringar)
-  - Ikoner: `Scale`, `RotateCcw`, `ChevronRight`, `Check`, `Loader2` fran lucide-react
-  - Anvander befintliga UI-komponenter: `Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `Button`, `Input`
-
-### Inga databas- eller backend-andringar
-Kommandona `tare` och `calibrate` fungerar redan. Bara UI-flödet ändras.
-
+Alla beskrivningar i UI kommer notera att vardet ar uppskattat och kan avvika upp till 3 dB pa grund av RMS vs peak-skillnader.
