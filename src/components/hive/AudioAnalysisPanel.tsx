@@ -28,6 +28,12 @@ export default function AudioAnalysisPanel({ normalDbfs, latestReading, readings
       {/* Current audio values with descriptions */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <AudioValueCard
+          label="~dB SPL"
+          value={r?.dbfs != null ? (r.dbfs + 120).toFixed(1) : '-'}
+          description="Uppskattad ljudnivå (MSM261S4030H0R, S=-26 dBFS). Kan avvika upp till ±3 dB från verkligt värde."
+          alert={r?.dbfs != null && (r.dbfs + 120) > 100}
+        />
+        <AudioValueCard
           label="dBFS"
           value={r?.dbfs != null ? r.dbfs.toFixed(1) : '-'}
           description={
@@ -96,7 +102,18 @@ export default function AudioAnalysisPanel({ normalDbfs, latestReading, readings
           timeRange={timeRange}
         />
         <SensorChart
-          title="dBFS"
+          title="~dB SPL (uppskattad)"
+          description="Konverterad från dBFS med MSM261S4030H0R (S=-26 dBFS @ 94 dB SPL). Kan avvika upp till ±3 dB (RMS vs peak)."
+          data={readings}
+          dataKey="db_spl"
+          name="dB SPL"
+          color="hsl(var(--chart-sound))"
+          unit=" dB"
+          domain={[20, 120]}
+          timeRange={timeRange}
+        />
+        <SensorChart
+          title="dBFS (råvärde)"
           description="Relativ ljudstyrka i decibel. Jämförs mot normalvärde."
           data={readings}
           dataKey="dbfs"

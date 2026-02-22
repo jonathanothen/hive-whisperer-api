@@ -18,12 +18,13 @@ interface SensorChartProps {
   title: string;
   description?: string;
   data: SensorReading[];
-  dataKey: keyof SensorReading;
+  dataKey: keyof SensorReading | keyof AggregatedReading;
   name: string;
   color: string;
   unit?: string;
   domain?: [number, number];
   timeRange: TimeRange;
+  computed?: (r: SensorReading) => number | null;
 }
 
 export default function SensorChart({ 
@@ -36,6 +37,7 @@ export default function SensorChart({
   unit = '',
   domain,
   timeRange,
+  computed,
 }: SensorChartProps) {
   // Aggregate data based on time range
   const aggregatedData = aggregateSensorData(data, timeRange);

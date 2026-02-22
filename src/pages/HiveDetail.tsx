@@ -263,6 +263,17 @@ export default function HiveDetail() {
             domain={[0, 1]}
             timeRange={timeRange}
           />
+          <SensorChart
+            title="~dB SPL (uppskattad)"
+            description="Konverterad från dBFS (MSM261S4030H0R, S=-26 dBFS). Kan avvika ±3 dB."
+            data={readings || []}
+            dataKey="db_spl"
+            name="dB SPL"
+            color="hsl(var(--chart-sound))"
+            unit=" dB"
+            domain={[20, 120]}
+            timeRange={timeRange}
+          />
         </div>
 
 
