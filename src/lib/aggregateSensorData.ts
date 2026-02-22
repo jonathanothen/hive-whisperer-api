@@ -11,6 +11,7 @@ export interface AggregatedReading {
   sound_rms: number | null;
   swarm_score: number | null;
   dbfs: number | null;
+  db_spl: number | null;
   band_hum: number | null;
   band_piping: number | null;
   band_swarm: number | null;
@@ -72,6 +73,10 @@ export function aggregateSensorData(readings: SensorReading[], range: TimeRange)
       sound_rms: calculateAverage(group.map(r => r.sound_rms)),
       swarm_score: calculateAverage(group.map(r => r.swarm_score)),
       dbfs: calculateAverage(group.map(r => r.dbfs)),
+      db_spl: (() => {
+        const avgDbfs = calculateAverage(group.map(r => r.dbfs));
+        return avgDbfs != null ? avgDbfs + 120 : null;
+      })(),
       band_hum: calculateAverage(group.map(r => r.band_hum)),
       band_piping: calculateAverage(group.map(r => r.band_piping)),
       band_swarm: calculateAverage(group.map(r => r.band_swarm)),
